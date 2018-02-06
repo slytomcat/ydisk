@@ -22,11 +22,9 @@ func TestFailInit(t *testing.T) {
 	notInstalled := true
 	if err == nil {
 		llog.Info("yandex-disk installed. Try to rename it for not_installed case test")
-		cmd := fmt.Sprintf("sudo mv %s %s", daemon, daemon+"_")
-		err = exec.Command(cmd).Run()
-		//os.Rename(daemon, daemon+"_")
+		err = exec.Command("sudo", "mv", daemon, daemon+"_").Run()
 		if err != nil {
-			llog.Error("Can't rename yandex-disk: NOT_INSTALLED case can't be tested")
+			llog.Error(err," Can't rename yandex-disk: NOT_INSTALLED case can't be tested")
 			notInstalled = false
 		}
 	}	
@@ -41,9 +39,7 @@ func TestFailInit(t *testing.T) {
 	}
 	// restore daemon it it was renamed before
 	if daemon != "" && notInstalled {
-		cmd := fmt.Sprintf("sudo mv %s %s", daemon+"_", daemon)
-		_ = exec.Command(cmd).Run()
-		//_ = os.Rename(daemon+"_", daemon)
+		_ = exec.Command("sudo", "mv", daemon+"_", daemon).Run()
 	}
 
 	// test initialization with wrong config 
