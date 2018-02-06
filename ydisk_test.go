@@ -1,6 +1,7 @@
 package ydisk
 
 import (
+	"log"
 	"time"
 	"os/exec"
 	"os"
@@ -17,6 +18,7 @@ var (
 
 func init() {
 	llog.SetLevel(llog.DEBUG)
+	llog.SetFlags(log.Lshortfile | log.Lmicroseconds)
 	home = os.Getenv("HOME")
 	cfgpath = filepath.Join(home, ".config", "yandex-disk")
 	cfg = filepath.Join(cfgpath, "config.cfg")
@@ -61,7 +63,7 @@ func TestWrongConf(t *testing.T) {
 func TestEmptyConf(t *testing.T) {
 	// test initialization with empty config
 	ecfg := "empty.cfg"
-	file, err := os.OpenFile(ecfg, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(ecfg, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		llog.Error(err)	
 	} else {
@@ -83,22 +85,26 @@ proxy="no"
 
 func TestCreateSuccess(t *testing.T) {
 	// setup yandex-disk
-	err := exec.Command("yandex-disk", "token", "-p", "$YPASS", "$YUSER").Run()
+	auth := filepath.Join(cfgpath, "passwd")
+	dir := filepath.Join(home, "Yandex.Disk")
+	cmd := exec.Command("yandex-disk", "token", "-a", auth, "-p", os.Getenv("YPASS"), os.Getenv("YUSER"))
+	err := cmd.Run()
 	if err != nil{
-		llog.Error(err)
+		llog.Error("yandex-disk token error:", err)
 	}
-	file, err := os.OpenFile(cfg, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(cfg, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		llog.Error(err)	
 	} else {
-		file.Write([]byte(`proxy="no"
-dir="`+filepath.Join(cfgpath, "passwd")+`"
-auth="`+cfg+`"
-`))
+		_, err := file.Write([]byte("proxy=\"no\"\nauth=\""+auth+"\"\ndir=\""+dir+"\"\n"))
+		if err != nil {
+			t.Error("Can't create config file: ", err)
+		}
 	}
+	os.MkdirAll(dir, 0777)
 	YD, err = NewYDisk(cfg)
 	if err != nil {
-		t.Error("Unsuccessful start of configuret daemon")
+		t.Error("Unsuccessful creation of configured daemon")
 	}
 }
 
