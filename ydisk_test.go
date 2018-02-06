@@ -22,7 +22,7 @@ func init() {
 	home = os.Getenv("HOME")
 	cfgpath = filepath.Join(home, ".config", "yandex-disk")
 	cfg = filepath.Join(cfgpath, "config.cfg")
-	
+	dir := filepath.Join(home, "Yandex.Disk")
 }
 
 func TestNotInstalled(t *testing.T) {
@@ -35,10 +35,11 @@ func TestNotInstalled(t *testing.T) {
 		if err != nil {
 			llog.Error(err," Can't rename yandex-disk: NOT_INSTALLED case can't be tested")
 			notInstalled = false
+		} else {
+			defer func () {
+				_ = exec.Command("sudo", "mv", daemon+"_", daemon).Run()
+			}()
 		}
-		defer func () {
-			_ = exec.Command("sudo", "mv", daemon+"_", daemon).Run()
-		}()
 	}	
 
 	if notInstalled {
@@ -63,14 +64,11 @@ func TestWrongConf(t *testing.T) {
 func TestEmptyConf(t *testing.T) {
 	// test initialization with empty config
 	ecfg := "empty.cfg"
-	file, err := os.OpenFile(ecfg, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(ecfg, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		llog.Error(err)	
 	} else {
-		file.Write([]byte(`dir="no_dir"
-auth="no_auth"
-proxy="no"
-`))
+		file.Write([]byte("dir=\"no_dir\"\nauth=\"no_auth\"\nproxy=\"no\"\n"))
 		file.Close()
 		defer os.Remove(ecfg)
 
@@ -86,9 +84,12 @@ proxy="no"
 func TestCreateSuccess(t *testing.T) {
 	// setup yandex-disk
 	auth := filepath.Join(cfgpath, "passwd")
-	dir := filepath.Join(home, "Yandex.Disk")
-	cmd := exec.Command("yandex-disk", "token", "-a", auth, "-p", os.Getenv("YPASS"), os.Getenv("YUSER"))
-	err := cmd.Run()
+	user := os.Getenv("YUSER")
+	pass := os.Getenv("YPASS")
+	if user == "" || pass == "" {
+		llog.Critical("No test environtment is set! Set YUSER/YPASS variables.")
+	}
+	err := exec.Command("yandex-disk", "token", "-a", auth, "-p", pass, user).Run()
 	if err != nil{
 		llog.Error("yandex-disk token error:", err)
 	}
@@ -173,6 +174,45 @@ func TestSecondaryStart(t *testing.T) {
 	}
 }
 
+func TestReaction(t *testing.T) {
+	name := filepath.Join(dir, "testfile.txt")
+	file, err := os.OpenFile(name, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		llog.Error(err)	
+	} else {
+		_, err := file.Write([]byte(" \n"))
+		if err != nil {
+			t.Error("Can't write test file: ", err)
+		}
+	}
+	file.Close()
+	defer os.Remove(name)
+	select {
+	case yds := <-YD.Changes:
+		if yds.Stat == "index" || yds.Stat == "busy" {
+			return
+		} else {
+			t.Error("Not index/busy status received after new file created")
+		}
+	case <- time.After(time.Second * 2):
+		t.Error("No reaction within 2 seconds after new file creted")
+	}
+}
+
+func TestBysy2Idle(t *testing.T) {
+	var yds YDvals
+	for {
+		select {
+		case yds = <-YD.Changes:
+			if yds.Stat == "idle"{
+				return
+			}
+		case <- time.After(time.Second * 10):
+			t.Error("No 'idle' status received within 10 sec interval after sync start")
+			return
+		}
+	}
+}
 func TestStop(t *testing.T) {
 	var yds YDvals
 	YD.Stop()
@@ -205,6 +245,8 @@ func TestClose(t *testing.T) {
 	case _, ok := <-YD.Changes:
 		if ok {
 			t.Error("Event received after YDisk.Close()")
+		} else {
+			return  // Channel closed - it's Ok.
 		}
 	case <- time.After(time.Second):
 		t.Error("Events channel is not closed after YDisk.Close()")
