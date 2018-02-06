@@ -17,21 +17,28 @@ func TestFailInit(t *testing.T) {
 	home := os.Getenv("HOME")
 	cfg := filepath.Join(home, ".config", "yandex-disk", "config.cfg")
 	// look for installed yandex-disk daemon
-	_, err  := exec.LookPath("yandex-disk")
-	if err != nil {
+	daemon, err  := exec.LookPath("yandex-disk")
+	notInstalled := true
+	if err == nil {
+		llog.Info("yandex-disk installed. Try to rename it for not_installed case test")
+		err = os.Rename(daemon, daemon+"_")
+		if err != nil {
+			llog.Error("Can't rename yandex-disk: NOT_INSTALLED case can't be tested")
+			notInstalled = false
+		}
+	}	
+
+	if notInstalled {
 		// test not_installed case
 		llog.Info("yandex-disk daemon is not installed")
 		_, err = NewYDisk(cfg)
 		if err == nil {
 			t.Error("Initialized with not installed daemon")
 		}
-		// install yandex-disk
-		err = exec.Command(`echo "deb http://repo.yandex.ru/yandex-disk/deb/ stable main" | sudo tee -a /etc/apt/sources.list.d/yandex.list > /dev/null && wget http://repo.yandex.ru/yandex-disk/YANDEX-DISK-KEY.GPG -O- | sudo apt-key add - && sudo apt-get update && sudo apt-get install -y yandex-disk`).Run()
-		if err != nil {
-			t.Error("Can't install daemon")
-		}
-	} else {
-		llog.Info("yandex-disk daemon is installed: Test_NOT_INSTALLED is skipped")
+	}
+	// restore daemon it it was renamed before
+	if daemon != "" && notInstalled {
+		_ = os.Rename(daemon+"_", daemon)
 	}
 
 	// test initialization with wrong config 
@@ -39,4 +46,5 @@ func TestFailInit(t *testing.T) {
 	if err == nil {
 		t.Error("Initialized with not existing daemon config file")
 	}
+
 }
