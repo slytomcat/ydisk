@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	home, cfg, cfgpath string
+	home, cfg, cfgpath, dir string
 	YD *YDisk
 )
 
