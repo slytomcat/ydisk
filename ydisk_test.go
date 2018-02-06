@@ -11,6 +11,7 @@ import (
 
 var (
 	home, cfg, cfgpath string
+	YD *YDisk
 )
 
 func init() {
@@ -18,6 +19,7 @@ func init() {
 	home = os.Getenv("HOME")
 	cfgpath = filepath.Join(home, ".config", "yandex-disk")
 	cfg = filepath.Join(cfgpath, "config.cfg")
+	
 }
 
 func TestNotInstalled(t *testing.T) {
@@ -62,7 +64,10 @@ func TestEmptyConf(t *testing.T) {
 	if err != nil {
 		llog.Error(err)	
 	} else {
-		file.Write([]byte("\n"))
+		file.Write([]byte(`dir="no_dir"
+auth="no_auth"
+proxy="no"
+`))
 		file.Close()
 		defer os.Remove(ecfg)
 
@@ -72,5 +77,30 @@ func TestEmptyConf(t *testing.T) {
 			t.Error("Initialized with empty config file")
 		}
 
+	}
+}
+
+func TestStartOk(t *testing.T) {
+	// setup yandex-disk
+	err := exec.Command("yandex-disk", "token", "-p", "$PASSWD", "$USER").Run()
+	if err != nil{
+		llog.Error(err)
+	}
+	file, err := os.OpenFile(cfg, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		llog.Error(err)	
+	} else {
+		file.Write([]byte(`proxy="no"
+dir="`+filepath.Join(cfgpath, "passwd")+`"
+auth="`+cfg+`"
+`))
+	}
+	YD, err = NewYDisk(cfg)
+	if err != nil {
+		t.Error("Unsuccessful start of configuret daemon")
+	}
+	output := YD.getOutput(true)
+	if output == "" {
+		t.Error("Empty response from started daemon")
 	}
 }
