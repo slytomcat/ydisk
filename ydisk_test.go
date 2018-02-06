@@ -1,6 +1,7 @@
 package ydisk
 
 import (
+	"fmt"
 	"os/exec"
 	"os"
 	"path/filepath"
@@ -21,7 +22,9 @@ func TestFailInit(t *testing.T) {
 	notInstalled := true
 	if err == nil {
 		llog.Info("yandex-disk installed. Try to rename it for not_installed case test")
-		err = os.Rename(daemon, daemon+"_")
+		cmd := fmt.Sprintf("sudo mv %s %s", daemon, daemon+"_")
+		err = exec.Command(cmd).Run()
+		//os.Rename(daemon, daemon+"_")
 		if err != nil {
 			llog.Error("Can't rename yandex-disk: NOT_INSTALLED case can't be tested")
 			notInstalled = false
@@ -38,7 +41,9 @@ func TestFailInit(t *testing.T) {
 	}
 	// restore daemon it it was renamed before
 	if daemon != "" && notInstalled {
-		_ = os.Rename(daemon+"_", daemon)
+		cmd := fmt.Sprintf("sudo mv %s %s", daemon+"_", daemon)
+		_ = exec.Command(cmd).Run()
+		//_ = os.Rename(daemon+"_", daemon)
 	}
 
 	// test initialization with wrong config 
