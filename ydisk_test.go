@@ -191,15 +191,14 @@ func TestReaction(t *testing.T) {
 	case yds := <-YD.Changes:
 		if yds.Stat == "index" || yds.Stat == "busy" {
 			return
-		} else {
-			t.Error("Not index/busy status received after new file created")
 		}
+		t.Error("Not index/busy status received after new file created")
 	case <-time.After(time.Second * 2):
 		t.Error("No reaction within 2 seconds after new file creted")
 	}
 }
 
-func TestBysy2Idle(t *testing.T) {
+func TestBusy2Idle(t *testing.T) {
 	var yds YDvals
 	for {
 		select {
