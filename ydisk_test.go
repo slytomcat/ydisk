@@ -1,7 +1,6 @@
 package ydisk
 
 import (
-	"fmt"
 	"os/exec"
 	"os"
 	"path/filepath"
