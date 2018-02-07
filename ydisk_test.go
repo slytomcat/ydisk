@@ -158,8 +158,8 @@ func TestStart2Idle(t *testing.T) {
 			if yds.Stat == "idle" {
 				return
 			}
-		case <-time.After(time.Second * 20):
-			t.Error("No 'idle' status received within 20 sec interval after daemon start")
+		case <-time.After(time.Second * 30):
+			t.Error("No 'idle' status received within 30 sec interval after daemon start")
 			return
 		}
 	}
