@@ -180,7 +180,7 @@ func NewYDisk(conf string) (*YDisk, error) {
 	// Try to activate watching at the beginning. It may fail but it is not a problem
 	// as it can be activated later (on Start of daemon).
 	yd.activate() 
-	llog.Debug("New YDisk created and initialized.\n  Conf:", conf, "\n  Path:", path)
+	llog.Debug("New YDisk created and initialized. Path:", path)
 	return &yd, nil
 }
 
