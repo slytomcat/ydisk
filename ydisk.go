@@ -149,7 +149,7 @@ type YDisk struct {
 	Changes  chan YDvals // Output channel for detected changes in daemon status
 	conf     string      // Path to yandex-disc configuration file
 	exit     chan bool   // Stop signal/replay chanel for Event handler routine
-	activate func()      // Function to activate watcher after start of daemon
+	activate func()      // Function to activate watcher after daemon creation
 }
 
 // NewYDisk creates new YDisk structure for communication with yandex-disk daemon
@@ -158,10 +158,10 @@ type YDisk struct {
 //
 // Checks performed in the beginning:
 //
-//  - check that yandex-disk has installed
+//  - check that yandex-disk was installed
 //  - check that yandex-disk was properly configured
 //
-// When something not good NewYDisk raise panic
+// When something not good NewYDisk returns not nil error
 func NewYDisk(conf string) (*YDisk, error) {
 	path, err := checkDaemon(conf)
 	if err != nil {
@@ -177,7 +177,9 @@ func NewYDisk(conf string) (*YDisk, error) {
 	}
 	// start event handler in separate goroutine
 	go yd.eventHandler(watch)
-	yd.activate() // Try to activate watching at the beginning. It may fail
+	// Try to activate watching at the beginning. It may fail but it is not a problem
+	// as it can be activated later (on Start of daemon).
+	yd.activate() 
 	llog.Debug("New YDisk created and initialized.\n  Conf:", conf, "\n  Path:", path)
 	return &yd, nil
 }
@@ -186,7 +188,7 @@ func NewYDisk(conf string) (*YDisk, error) {
 func (yd *YDisk) eventHandler(watch watcher) {
 	llog.Debug("Event handler started")
 	yds := newYDvals()
-	tick := time.NewTimer(time.Millisecond * 100)  // First time trigger it quickly to update icon and meny 
+	tick := time.NewTimer(time.Millisecond * 100)  // First time trigger it quickly to update the current status 
 	interval := 1
 	defer func() {
 		watch.Close()
@@ -217,6 +219,7 @@ func (yd *YDisk) eventHandler(watch watcher) {
 				tick.Reset(time.Duration(interval) * time.Second)
 			}
 		}
+		// in both cases (Timer or Watcher events) we have to check for updates
 		if yds.update(yd.getOutput(false)) {
 			llog.Debug("Change: ", yds.Prev, ">", yds.Stat,
 				"S", len(yds.Total) > 0, "L", len(yds.Last), "E", len(yds.Err) > 0)
@@ -261,7 +264,7 @@ func (yd *YDisk) Start() {
 	} else {
 		llog.Debug("Daemon already started")
 	}
-	yd.activate() // try to activate watching after daemon start. It shouldn't fail
+	yd.activate() // try to activate watching after daemon start. It shouldn't fail on started daemon
 }
 
 // Stop runs `yandex-disk stop` if daemon was not stopped before.
