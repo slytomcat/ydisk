@@ -23,17 +23,17 @@ func notExists(path string) bool {
 // and authorization file ('passwd' file). If one of them is not exists then checkDaemon exits
 // from programm.
 // It returns the user catalog that is synchronized by daemon in case of success check.
-func checkDaemon(conf string) (string, string, error) {
-	daemon, err  := exec.LookPath("yandex-disk")
+func checkDaemon(conf string) (string, error) {
+	_, err  := exec.LookPath("yandex-disk")
 	if err != nil {
 		msg := "Yandex.Disk CLI utility is not installed. Install it first."
 		llog.Error(msg)
-		return "", "", fmt.Errorf("%s", msg)
+		return "", fmt.Errorf(msg)
 	}
 	f, err := os.Open(conf)
 	if err != nil {
 		llog.Error("Daemon configuration file opening error:", err)
-		return "", "", err
+		return "", err
 	}
 	defer f.Close()
 	reader := io.Reader(f)
@@ -61,7 +61,7 @@ func checkDaemon(conf string) (string, string, error) {
 	if notExists(dir) || notExists(auth) {
 		msg := "Daemon is not configured. First run: `yandex-disk setup`"
 		llog.Error(msg)
-		return "", "", fmt.Errorf("%s", msg)
+		return "", fmt.Errorf("%s", msg)
 	}
-	return daemon, dir, nil
+	return dir, nil
 }

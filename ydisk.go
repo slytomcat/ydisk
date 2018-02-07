@@ -147,7 +147,6 @@ func (w *watcher) activate(path string) {
 type YDisk struct {
 	Path     string      // Path to synchronized folder (obtained from yandex-disk conf. file)
 	Changes  chan YDvals // Output channel for detected changes in daemon status
-	daemon   string      // Path to yandex-disk executable
 	conf     string      // Path to yandex-disc configuration file
 	exit     chan bool   // Stop signal/replay chanel for Event handler routine
 	activate func()      // Function to activate watcher after start of daemon
@@ -164,7 +163,7 @@ type YDisk struct {
 //
 // When something not good NewYDisk raise panic
 func NewYDisk(conf string) (*YDisk, error) {
-	daemon, path, err := checkDaemon(conf)
+	path, err := checkDaemon(conf)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +171,6 @@ func NewYDisk(conf string) (*YDisk, error) {
 	yd := YDisk{
 		path,
 		make(chan YDvals, 1), // Output should be buffered
-		daemon,
 		conf,
 		make(chan bool),
 		func() { watch.activate(path) },
