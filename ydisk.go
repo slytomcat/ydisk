@@ -227,9 +227,9 @@ func (yd *YDisk) eventHandler(watch watcher) {
 }
 
 func (yd YDisk) getOutput(userLang bool) string {
-	cmd := []string{"yandex-disk", "-c", yd.conf, "status"}
-	if !userLang {
-		cmd = append([]string{"env", "-i", "LANG='en_US.UTF8'"}, cmd...)
+	cmd := []string{"env", "-i", "LANG='en_US.UTF8'", "yandex-disk", "-c", yd.conf, "status"}
+	if userLang {
+		cmd = cmd[3:]
 	}
 	out, err := exec.Command(cmd[0], cmd[1:]...).Output()
 	if err != nil {
