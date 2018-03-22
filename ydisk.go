@@ -188,8 +188,8 @@ func NewYDisk(conf string) (*YDisk, error) {
 func (yd *YDisk) eventHandler(watch watcher) {
 	llog.Debug("Event handler started")
 	yds := newYDvals()
-	tick := time.NewTimer(time.Millisecond * 100) // First time trigger it quickly to update the current status
 	interval := 1
+	tick := time.NewTimer(time.Millisecond * 100) // First time trigger it quickly to update the current status
 	defer func() {
 		watch.Close()
 		tick.Stop()
@@ -206,7 +206,6 @@ func (yd *YDisk) eventHandler(watch watcher) {
 			return
 		case event := <-watch.Events:
 			llog.Debug("Watcher event:", event)
-			tick.Reset(time.Second)
 			interval = 1
 		case <-tick.C:
 			llog.Debug("Timer interval:", interval)
@@ -216,10 +215,12 @@ func (yd *YDisk) eventHandler(watch watcher) {
 				interval <<= 1 // continuously increase timer interval: 2s, 4s, 8s.
 			}
 		}
+		// in both cases (Timer or Watcher events):
+		//  - restart timer
 		if interval < 10 {
 			tick.Reset(time.Duration(interval) * time.Second)
 		}
-		// in both cases (Timer or Watcher events) we have to check for updates
+		//  - check for daemon changes and send changed values in case of change
 		if yds.update(yd.getOutput(false)) {
 			llog.Debug("Change: ", yds.Prev, ">", yds.Stat,
 				"S", len(yds.Total) > 0, "L", len(yds.Last), "E", len(yds.Err) > 0)
