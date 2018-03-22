@@ -142,13 +142,13 @@ func (w *watcher) activate(path string) {
 }
 
 // YDisk provides methods to interact with yandex-disk (methods: Start, Stop, Output), path
-// of synchronized catalog (property Path) and channel for receiving yandex-disk status
+// of synchronized catalogue (property Path) and channel for receiving yandex-disk status
 // changes (property Changes).
 type YDisk struct {
 	Path     string      // Path to synchronized folder (obtained from yandex-disk conf. file)
 	Changes  chan YDvals // Output channel for detected changes in daemon status
 	conf     string      // Path to yandex-disc configuration file
-	exit     chan bool   // Stop signal/replay chanel for Event handler routine
+	exit     chan bool   // Stop signal/replay channel for Event handler routine
 	activate func()      // Function to activate watcher after daemon creation
 }
 
@@ -179,16 +179,16 @@ func NewYDisk(conf string) (*YDisk, error) {
 	go yd.eventHandler(watch)
 	// Try to activate watching at the beginning. It may fail but it is not a problem
 	// as it can be activated later (on Start of daemon).
-	yd.activate() 
+	yd.activate()
 	llog.Debug("New YDisk created and initialized. Path:", path)
 	return &yd, nil
 }
 
-// eventHandler works in separate goroutine untill YDisk.exit channel receives a bool value (any).
+// eventHandler works in separate goroutine until YDisk.exit channel receives a bool value (any).
 func (yd *YDisk) eventHandler(watch watcher) {
 	llog.Debug("Event handler started")
 	yds := newYDvals()
-	tick := time.NewTimer(time.Millisecond * 100)  // First time trigger it quickly to update the current status 
+	tick := time.NewTimer(time.Millisecond * 100) // First time trigger it quickly to update the current status
 	interval := 1
 	defer func() {
 		watch.Close()
@@ -215,9 +215,9 @@ func (yd *YDisk) eventHandler(watch watcher) {
 			} else {
 				interval <<= 1 // continuously increase timer interval: 2s, 4s, 8s.
 			}
-			if interval < 10 {
-				tick.Reset(time.Duration(interval) * time.Second)
-			}
+		}
+		if interval < 10 {
+			tick.Reset(time.Duration(interval) * time.Second)
 		}
 		// in both cases (Timer or Watcher events) we have to check for updates
 		if yds.update(yd.getOutput(false)) {

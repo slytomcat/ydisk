@@ -21,8 +21,8 @@ func notExists(path string) bool {
 // checkDaemon checks that yandex-disk daemon is installed.
 // It reads the provided daemon configuration file and checks existence of synchronized folder
 // and authorization file ('passwd' file). If one of them is not exists then checkDaemon exits
-// from programm.
-// It returns the user catalog that is synchronized by daemon in case of success check.
+// from program.
+// It returns the user catalogue that is synchronized by daemon in case of success check.
 func checkDaemon(conf string) (string, error) {
 	_, err  := exec.LookPath("yandex-disk")
 	if err != nil {
