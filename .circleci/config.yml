@@ -1,0 +1,33 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.11.1
+    steps:
+      - checkout
+      - run: 
+          name: Build
+          command: 'go build'
+  test:
+    docker:
+      - image: circleci/golang:1.11.1
+    steps:
+      - checkout
+      - run:
+          name: Install yandex-disk
+          command: echo "deb http://repo.yandex.ru/yandex-disk/deb/ stable main" | sudo tee -a /etc/apt/sources.list.d/yandex.list > /dev/null && wget http://repo.yandex.ru/yandex-disk/YANDEX-DISK-KEY.GPG -O- | sudo apt-key add - && sudo apt-get update && sudo apt-get install -y yandex-disk
+      - run: 
+          name: Tests
+          command:  'go test -v -race -coverprofile cover.out'
+      - run: 
+          name: Format coverage
+          command: 'go tool cover -html=cover.out -o coverage.html'
+      - store_artifacts:
+          path: coverage.html
+          prefix: coverage
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - test
