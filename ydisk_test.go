@@ -91,11 +91,11 @@ func TestCreateSuccess(t *testing.T) {
 	}
 	err := exec.Command("yandex-disk", "token", "-a", auth, "-p", pass, user).Run()
 	if err != nil {
-		llog.Error("yandex-disk token error:", err)
+		llog.Critical("yandex-disk token error:", err)
 	}
 	file, err := os.OpenFile(cfg, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
-		llog.Error(err)
+		llog.Critical(err)
 	} else {
 		_, err := file.Write([]byte("proxy=\"no\"\nauth=\"" + auth + "\"\ndir=\"" + dir + "\"\n"))
 		if err != nil {
