@@ -6,6 +6,9 @@ jobs:
     steps:
       - checkout
       - run: 
+          name: Get dependencies
+          command: 'go get ./...'
+      - run: 
           name: Build
           command: 'go build'
   test:
@@ -16,6 +19,9 @@ jobs:
       - run:
           name: Install yandex-disk
           command: echo "deb http://repo.yandex.ru/yandex-disk/deb/ stable main" | sudo tee -a /etc/apt/sources.list.d/yandex.list > /dev/null && wget http://repo.yandex.ru/yandex-disk/YANDEX-DISK-KEY.GPG -O- | sudo apt-key add - && sudo apt-get update && sudo apt-get install -y yandex-disk
+      - run: 
+          name: Get dependencies
+          command: 'go get ./...'
       - run: 
           name: Tests
           command:  'go test -v -race -coverprofile cover.out'
