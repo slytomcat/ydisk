@@ -16,7 +16,7 @@ import (
 	"github.com/slytomcat/llog"
 )
 
-// YDvals - Daemon Status values
+/* YDvals - Daemon Status structure */
 type YDvals struct {
 	Stat   string   // Current Status
 	Prev   string   // Previous Status
@@ -31,6 +31,7 @@ type YDvals struct {
 	Prog   string   // Synchronization progress (when in busy status)
 }
 
+/* A new YDvals constsructor */
 func newYDvals() YDvals {
 	return YDvals{
 		"unknown",      // Current Status
@@ -50,8 +51,8 @@ func setChanged(v *string, val string, c *bool) {
 	}
 }
 
-// update updates Daemon status values from the daemon output string.
-// Returns true if a change detected in any value, otherwise returns false */
+/* update - Updates Daemon status values from the daemon output string.
+   Returns true if a change detected in any value, otherwise returns false */
 func (val *YDvals) update(out string) bool {
 	val.Prev = val.Stat // store previous status but don't track changes of val.Prev
 	changed := false    // track changes for values
