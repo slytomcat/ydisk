@@ -89,6 +89,7 @@ func TestCreateSuccess(t *testing.T) {
 	if user == "" || pass == "" {
 		llog.Critical("No test environtment is set! Set YUSER/YPASS variables.")
 	}
+	llog.Info(auth)
 	err := exec.Command("yandex-disk", "token", "-a", auth, "-p", pass, user).Run()
 	if err != nil {
 		llog.Critical("yandex-disk token error:", err)
