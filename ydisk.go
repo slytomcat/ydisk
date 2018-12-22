@@ -16,7 +16,7 @@ import (
 	"github.com/slytomcat/llog"
 )
 
-/* YDvals - Daemon Status structure */
+// YDvals - Daemon Status structure
 type YDvals struct {
 	Stat   string   // Current Status
 	Prev   string   // Previous Status
@@ -149,6 +149,7 @@ type YDisk struct {
 	Path     string      // Path to synchronized folder (obtained from yandex-disk conf. file)
 	Changes  chan YDvals // Output channel for detected changes in daemon status
 	conf     string      // Path to yandex-disc configuration file
+	exe      string      // Path to yandex-disk executable
 	exit     chan bool   // Stop signal/replay channel for Event handler routine
 	activate func()      // Function to activate watcher after daemon creation
 }
@@ -169,10 +170,16 @@ func NewYDisk(conf string) (*YDisk, error) {
 		return nil, err
 	}
 	watch := newwatcher()
+	exe, err := exec.LookPath("yandex-disk")
+	if err != nil {
+		return nil, err
+	}
+	llog.Debug("yandex-disk executable is:", exe)
 	yd := YDisk{
 		path,
 		make(chan YDvals, 1), // Output should be buffered
 		conf,
+		exe,
 		make(chan bool),
 		func() { watch.activate(path) },
 	}
@@ -232,7 +239,7 @@ func (yd *YDisk) eventHandler(watch watcher) {
 }
 
 func (yd YDisk) getOutput(userLang bool) string {
-	cmd := []string{"env", "-i", "yandex-disk", "-c", yd.conf, "status"}
+	cmd := []string{"env", "-i", yd.exe, "status", "-c", yd.conf}
 	if userLang {
 		cmd = cmd[2:]
 	}
@@ -258,7 +265,7 @@ func (yd *YDisk) Output() string {
 // Start runs `yandex-disk start` if daemon was not started before.
 func (yd *YDisk) Start() {
 	if yd.getOutput(true) == "" {
-		out, err := exec.Command("yandex-disk", "-c", yd.conf, "start").Output()
+		out, err := exec.Command(yd.exe, "start", "-c", yd.conf).Output()
 		if err != nil {
 			llog.Error(err)
 		}
@@ -272,7 +279,7 @@ func (yd *YDisk) Start() {
 // Stop runs `yandex-disk stop` if daemon was not stopped before.
 func (yd *YDisk) Stop() {
 	if yd.getOutput(true) != "" {
-		out, err := exec.Command("yandex-disk", "-c", yd.conf, "stop").Output()
+		out, err := exec.Command(yd.exe, "stop", "-c", yd.conf).Output()
 		if err != nil {
 			llog.Error(err)
 		}

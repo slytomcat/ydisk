@@ -23,33 +23,32 @@ func init() {
 	cfgpath = filepath.Join(home, ".config", "yandex-disk")
 	cfg = filepath.Join(cfgpath, "config.cfg")
 	dir = filepath.Join(home, "Yandex.Disk")
+	// instll simulator for yandex-disk
+	exec.Command("go", "get", "-d", "https://github.com/slytomcat/yandex-disk-simulator.git").Run()
+	exec.Command("go", "install", "github.com/slytomcat/yandex-disk-simulator").Run()
+	// rename simulator to original utility name
+	exe, err := exec.LookPath("yandex-disk-simulator")
+	if err != nil {
+		log.Fatal("yandex-disk simulator installation error:", err)
+	}
+	dir, _ := filepath.Split(exe)
+	exec.Command("mv", exe, filepath.Join(dir, "yandex-disk")).Run()
+	os.Setenv("PATH", dir+":"+os.Getenv("PATH"))
+	llog.Debug("Init completed")
 }
 
 func TestNotInstalled(t *testing.T) {
-	// look for installed yandex-disk daemon
-	daemon, err := exec.LookPath("yandex-disk")
-	notInstalled := true
+	path := os.Getenv("PATH")
+	// remove PATH for test time
+	os.Setenv("PATH", "")
+	// test not_installed case
+	llog.Info("NOT_INSTALLED case test")
+	_, err := NewYDisk(cfg)
 	if err == nil {
-		llog.Info("yandex-disk installed. Try to rename it for NOT_INSTALLED case test")
-		err = exec.Command("sudo", "mv", daemon, daemon+"_").Run()
-		if err != nil {
-			llog.Error(err, " Can't rename yandex-disk: NOT_INSTALLED case can't be tested")
-			notInstalled = false
-		} else {
-			defer func() {
-				_ = exec.Command("sudo", "mv", daemon+"_", daemon).Run()
-			}()
-		}
+		t.Error("Initialized with not installed daemon")
 	}
-
-	if notInstalled {
-		// test not_installed case
-		llog.Info("NOT_INSTALLED case test")
-		_, err = NewYDisk(cfg)
-		if err == nil {
-			t.Error("Initialized with not installed daemon")
-		}
-	}
+	// restore PATH
+	os.Setenv("PATH", path)
 }
 
 func TestWrongConf(t *testing.T) {
@@ -84,15 +83,16 @@ func TestEmptyConf(t *testing.T) {
 func TestCreateSuccess(t *testing.T) {
 	// setup yandex-disk
 	auth := filepath.Join(cfgpath, "passwd")
-	user := os.Getenv("YUSER")
-	pass := os.Getenv("YPASS")
-	if user == "" || pass == "" {
-		llog.Critical("No test environtment is set! Set YUSER/YPASS variables.")
-	}
-	llog.Info(auth)
-	err := exec.Command("yandex-disk", "token", "-a", auth, "-p", pass, user).Run()
-	if err != nil {
-		llog.Critical("yandex-disk token error:", err)
+	if !notExists(auth) {
+		file, err := os.OpenFile(auth, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
+		if err != nil {
+			llog.Critical("yandex-disk token file creation error:", err)
+		}
+		_, err = file.Write([]byte("token")) // yandex-disk-simulator doesn't require the real token
+		if err != nil {
+			llog.Critical("yandex-disk token file creation error:", err)
+		}
+		file.Close()
 	}
 	file, err := os.OpenFile(cfg, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
@@ -176,26 +176,15 @@ func TestSecondaryStart(t *testing.T) {
 }
 
 func TestReaction(t *testing.T) {
-	name := filepath.Join(dir, "testfile.txt")
-	file, err := os.OpenFile(name, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		llog.Error(err)
-	} else {
-		_, err := file.Write([]byte(" \n"))
-		if err != nil {
-			t.Error("Can't write test file: ", err)
-		}
-	}
-	file.Close()
-	defer os.Remove(name)
+	_ = exec.Command("yandex-disk", "sync").Run()
 	select {
 	case yds := <-YD.Changes:
 		if yds.Stat == "index" || yds.Stat == "busy" {
 			return
 		}
-		t.Error("Not index/busy status received after new file created")
+		t.Error("Not index/busy status received after sync started")
 	case <-time.After(time.Second * 2):
-		t.Error("No reaction within 2 seconds after new file creted")
+		t.Error("No reaction within 2 seconds after sync started")
 	}
 }
 
