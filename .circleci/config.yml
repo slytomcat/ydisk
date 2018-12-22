@@ -16,12 +16,14 @@ jobs:
       - image: circleci/golang:1.11.1
     steps:
       - checkout
-      - run:
-          name: Install yandex-disk
-          command: echo "deb http://repo.yandex.ru/yandex-disk/deb/ stable main" | sudo tee -a /etc/apt/sources.list.d/yandex.list > /dev/null && wget http://repo.yandex.ru/yandex-disk/YANDEX-DISK-KEY.GPG -O- | sudo apt-key add - && sudo apt-get update && sudo apt-get install -y yandex-disk
       - run: 
           name: Get dependencies
           command: go get ./...
+      - run: 
+          name: Prepare yandex-disk simulator
+          command: |
+            go get github.com/slytomcat/yandex-disk-simulator;
+            go env;
       - run: 
           name: Prepare
           command: |

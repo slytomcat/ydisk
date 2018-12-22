@@ -24,7 +24,7 @@ func init() {
 	cfg = filepath.Join(cfgpath, "config.cfg")
 	dir = filepath.Join(home, "Yandex.Disk")
 	// instll simulator for yandex-disk
-	exec.Command("go", "get", "-d", "https://github.com/slytomcat/yandex-disk-simulator.git").Run()
+	exec.Command("go", "get", "-d", "github.com/slytomcat/yandex-disk-simulator.git").Run()
 	exec.Command("go", "install", "github.com/slytomcat/yandex-disk-simulator").Run()
 	// rename simulator to original utility name
 	exe, err := exec.LookPath("yandex-disk-simulator")
