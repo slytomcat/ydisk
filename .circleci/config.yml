@@ -24,8 +24,7 @@ jobs:
           command: |
             echo $PATH;
             go get github.com/slytomcat/yandex-disk-simulator;
-            go install github.com/slytomcat/yandex-disk-simulator;
-            echo $(find /home -type f -name "yandex-disk" 2>/dev/null);
+            echo $(find /home -type f -name "yandex-disk-simulator" 2>/dev/null);
       - run: 
           name: Prepare
           command: |
