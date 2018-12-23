@@ -80,7 +80,10 @@ func TestEmptyConf(t *testing.T) {
 
 func TestCreateSuccess(t *testing.T) {
 	// setup yandex-disk
-	os.MkdirAll(cfgpath, 0777)
+	err := os.MkdirAll(cfgpath, 0777)
+	if err != nil {
+		t.Error("config path creation error")
+	}
 	auth := filepath.Join(cfgpath, "passwd")
 	if !notExists(auth) {
 		file, err := os.OpenFile(auth, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
@@ -102,7 +105,10 @@ func TestCreateSuccess(t *testing.T) {
 			t.Error("Can't create config file: ", err)
 		}
 	}
-	os.MkdirAll(dir, 0777)
+	err = os.MkdirAll(dir, 0777)
+	if err != nil {
+		t.Error("sync dir creation error", err)
+	}
 	YD, err = NewYDisk(cfg)
 	if err != nil {
 		t.Error("Unsuccessful creation of configured daemon")
