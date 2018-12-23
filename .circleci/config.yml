@@ -20,12 +20,6 @@ jobs:
           name: Get dependencies
           command: go get ./...
       - run: 
-          name: Prepare PATH for yandex-disk simulator
-          command: |
-            echo $PATH;
-            go get github.com/slytomcat/yandex-disk-simulator;
-            echo $(find /home -type f -name "yandex-disk-simulator" 2>/dev/null);
-      - run: 
           name: Prepare
           command: |
             go get -u github.com/jstemmer/go-junit-report;
