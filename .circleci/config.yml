@@ -20,10 +20,8 @@ jobs:
           name: Get dependencies
           command: go get ./...
       - run: 
-          name: Prepare yandex-disk simulator
-          command: |
-            go get github.com/slytomcat/yandex-disk-simulator;
-            go env;
+          name: Prepare PATH for yandex-disk simulator
+          command: PATH=$GOPATH/bin:$PATH
       - run: 
           name: Prepare
           command: |
