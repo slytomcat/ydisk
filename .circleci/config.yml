@@ -21,7 +21,11 @@ jobs:
           command: go get ./...
       - run: 
           name: Prepare PATH for yandex-disk simulator
-          command: PATH=$GOPATH/bin:$PATH
+          command: |
+            PATH=$GOPATH/bin:$PATH
+            echo $PATH
+            go get github.com/sytomcat/yandex-disk-simulator
+            find / -name yandex-disk 
       - run: 
           name: Prepare
           command: |
