@@ -24,8 +24,7 @@ func init() {
 	cfg = filepath.Join(cfgpath, "config.cfg")
 	dir = filepath.Join(home, "Yandex.Disk")
 	// instll simulator for yandex-disk
-	exec.Command("go", "get", "-d", "github.com/slytomcat/yandex-disk-simulator").Run()
-	exec.Command("go", "install", "github.com/slytomcat/yandex-disk-simulator").Run()
+	exec.Command("go", "get", "github.com/slytomcat/yandex-disk-simulator").Run()
 	// rename simulator to original utility name
 	exe, err := exec.LookPath("yandex-disk-simulator")
 	if err != nil {
@@ -39,14 +38,14 @@ func init() {
 
 func TestNotInstalled(t *testing.T) {
 	path := os.Getenv("PATH")
-	// remove PATH for test time
+	// make PATH empty for test time
 	os.Setenv("PATH", "")
 	// test not_installed case
 	_, err := NewYDisk(cfg)
 	if err == nil {
 		t.Error("Initialized with not installed daemon")
 	}
-	// restore PATH
+	// restore original PATH value
 	os.Setenv("PATH", path)
 }
 
@@ -65,7 +64,7 @@ func TestEmptyConf(t *testing.T) {
 	if err != nil {
 		llog.Error(err)
 	} else {
-		file.Write([]byte("dir=\"no_dir\"\nauth=\"no_auth\"\nproxy=\"no\"\n"))
+		file.Write([]byte("dir=\"no_dir\"\n\nproxy=\"no\"\n"))
 		file.Close()
 		defer os.Remove(ecfg)
 
@@ -99,25 +98,25 @@ func TestCreateSuccess(t *testing.T) {
 	if err != nil {
 		llog.Critical(err)
 	} else {
-		_, err := file.Write([]byte("proxy=\"no\"\nauth=\"" + auth + "\"\ndir=\"" + dir + "\"\n"))
+		_, err := file.Write([]byte("proxy=\"no\"\nauth=\"" + auth + "\"\ndir=\"" + dir + "\"\n\n"))
 		if err != nil {
 			t.Error("Can't create config file: ", err)
 		}
 	}
 	err = os.MkdirAll(dir, 0777)
 	if err != nil {
-		t.Error("sync dir creation error", err)
+		t.Error("synchronization dir creation error:", err)
 	}
 	YD, err = NewYDisk(cfg)
 	if err != nil {
-		t.Error("Unsuccessful creation of configured daemon")
+		t.Error("creation error of normally configured daemon")
 	}
 }
 
 func TestOutputNotStarted(t *testing.T) {
 	output := YD.Output()
 	if output != "" {
-		t.Error("Non empty response from unactive daemon")
+		t.Error("Non-empty response from inactive daemon")
 	}
 }
 
@@ -127,10 +126,10 @@ func TestInitialEvent(t *testing.T) {
 	case yds = <-YD.Changes:
 		llog.Infof("%v", yds)
 	case <-time.After(time.Second):
-		t.Error("No Events received within 1 sec interval after YDisk creation")
+		t.Error("No events received within 1 sec interval after YDisk creation")
 	}
 	if yds.Stat != "none" {
-		t.Error("Not 'none' status received from unactive daemon")
+		t.Error("Not 'none' status received from inactive daemon")
 	}
 }
 
@@ -141,7 +140,7 @@ func TestStart(t *testing.T) {
 	case yds = <-YD.Changes:
 		llog.Infof("%v", yds)
 	case <-time.After(time.Second * 3):
-		t.Error("No Events received within 3 sec interval after daemon start")
+		t.Error("No events received within 3 sec interval after daemon start")
 	}
 	if yds.Stat == "none" {
 		t.Error("'none' status received from started daemon")
