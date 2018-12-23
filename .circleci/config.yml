@@ -22,10 +22,10 @@ jobs:
       - run: 
           name: Prepare PATH for yandex-disk simulator
           command: |
-            PATH=$GOPATH/bin:$PATH;
             echo $PATH;
             go get github.com/slytomcat/yandex-disk-simulator;
-            find / -name yandex-disk
+            go istall github.com/slytomcat/yandex-disk-simulator;
+            echo $(find /home -type f -name "yandex-disk" 2>/dev/null)
       - run: 
           name: Prepare
           command: |
