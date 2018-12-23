@@ -42,7 +42,6 @@ func TestNotInstalled(t *testing.T) {
 	// remove PATH for test time
 	os.Setenv("PATH", "")
 	// test not_installed case
-	llog.Info("NOT_INSTALLED case test")
 	_, err := NewYDisk(cfg)
 	if err == nil {
 		t.Error("Initialized with not installed daemon")
@@ -52,8 +51,7 @@ func TestNotInstalled(t *testing.T) {
 }
 
 func TestWrongConf(t *testing.T) {
-	// test initialization with wrong config
-	llog.Info("WRONG_CONF case test")
+	// test initialization with wrong/not-existing config
 	_, err := NewYDisk(cfg + "_bad")
 	if err == nil {
 		t.Error("Initialized with not existing daemon config file")
@@ -82,6 +80,7 @@ func TestEmptyConf(t *testing.T) {
 
 func TestCreateSuccess(t *testing.T) {
 	// setup yandex-disk
+	os.MkdirAll(cfgpath, 0777)
 	auth := filepath.Join(cfgpath, "passwd")
 	if !notExists(auth) {
 		file, err := os.OpenFile(auth, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
