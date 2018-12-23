@@ -69,7 +69,6 @@ func TestEmptyConf(t *testing.T) {
 		file.Close()
 		defer os.Remove(ecfg)
 
-		llog.Info("EMPTY_CONF case test")
 		_, err = NewYDisk(ecfg)
 		if err == nil {
 			t.Error("Initialized with empty config file")
@@ -85,7 +84,7 @@ func TestCreateSuccess(t *testing.T) {
 		t.Error("config path creation error")
 	}
 	auth := filepath.Join(cfgpath, "passwd")
-	if !notExists(auth) {
+	if notExists(auth) {
 		file, err := os.OpenFile(auth, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
 		if err != nil {
 			llog.Critical("yandex-disk token file creation error:", err)
