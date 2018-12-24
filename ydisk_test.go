@@ -13,12 +13,12 @@ import (
 )
 
 var (
-	Cfg, CfgPath, Dir string
+	Cfg, CfgPath, SyncDir string
 	YD                *YDisk
 )
 
 const (
-	SyncDir        = "$HOME/TeSt_Yandex.Disk_TeSt"
+	SyncDirPath    = "$HOME/TeSt_Yandex.Disk_TeSt"
 	ConfigFilePath = "$HOME/.config/TeSt_Yandex.Disk_TeSt"
 )
 
@@ -30,8 +30,8 @@ func TestMain(m *testing.M) {
 	llog.SetFlags(log.Lshortfile | log.Lmicroseconds)
 	CfgPath = os.ExpandEnv(ConfigFilePath)
 	Cfg = filepath.Join(CfgPath, "config.cfg")
-	Dir = os.ExpandEnv(SyncDir)
-	os.Setenv("DEBUG_SyncDir", Dir)
+	SyncDir = os.ExpandEnv(SyncDirPath)
+	os.Setenv("DEBUG_SyncDir", SyncDir)
 	os.Setenv("DEBUG_ConfDir", CfgPath)
 	err := os.MkdirAll(CfgPath, 0755)
 	if err != nil {
@@ -44,9 +44,9 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal("yandex-disk simulator installation error:", err)
 	}
-	Dir, _ := filepath.Split(exe)
-	exec.Command("mv", exe, filepath.Join(Dir, "yandex-disk")).Run()
-	os.Setenv("PATH", Dir+":"+os.Getenv("PATH"))
+	exeDir, _ := filepath.Split(exe)
+	exec.Command("mv", exe, filepath.Join(exeDir, "yandex-disk")).Run()
+	os.Setenv("PATH", exeDir+":"+os.Getenv("PATH"))
 	llog.Debug("Init completed")
 
 	// Run tests
@@ -54,7 +54,7 @@ func TestMain(m *testing.M) {
 
 	// Clearance
 	os.RemoveAll(CfgPath)
-	os.RemoveAll(Dir)
+	os.RemoveAll(SyncDir)
 	os.Exit(e)
 }
 
@@ -122,12 +122,12 @@ func TestCreateSuccess(t *testing.T) {
 	if err != nil {
 		llog.Critical(err)
 	} else {
-		_, err := file.Write([]byte("proxy=\"no\"\nauth=\"" + auth + "\"\ndir=\"" + Dir + "\"\n\n"))
+		_, err := file.Write([]byte("proxy=\"no\"\nauth=\"" + auth + "\"\ndir=\"" + SyncDir + "\"\n\n"))
 		if err != nil {
 			t.Error("Can't create config file: ", err)
 		}
 	}
-	err = os.MkdirAll(Dir, 0777)
+	err = os.MkdirAll(SyncDir, 0777)
 	if err != nil {
 		t.Error("synchronization Dir creation error:", err)
 	}
