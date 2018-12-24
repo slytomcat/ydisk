@@ -12,17 +12,22 @@ import (
 )
 
 var (
-	home, cfg, cfgpath, dir string
-	YD                      *YDisk
+	Cfg, CfgPath, Dir string
+	YD                *YDisk
+)
+
+const (
+	SyncDir        = "$HOME/TeSt_Yandex.Disk_TeSt"
+	ConfigFilePath = "$HOME/.config/TeSt_Yandex.Disk_TeSt"
 )
 
 func init() {
 	llog.SetLevel(llog.DEBUG)
 	llog.SetFlags(log.Lshortfile | log.Lmicroseconds)
-	home = os.Getenv("HOME")
-	cfgpath = filepath.Join(home, ".config", "yandex-disk")
-	cfg = filepath.Join(cfgpath, "config.cfg")
-	dir = filepath.Join(home, "Yandex.Disk")
+	CfgPath = os.ExpandEnv(ConfigFilePath)
+	Cfg = filepath.Join(CfgPath, "config.Cfg")
+	Dir = os.ExpandEnv(SyncDir)
+	os.Setenv("DEBUG_SyncDir", Dir)
 	// instll simulator for yandex-disk
 	exec.Command("go", "get", "github.com/slytomcat/yandex-disk-simulator").Run()
 	// rename simulator to original utility name
@@ -30,9 +35,9 @@ func init() {
 	if err != nil {
 		log.Fatal("yandex-disk simulator installation error:", err)
 	}
-	dir, _ := filepath.Split(exe)
-	exec.Command("mv", exe, filepath.Join(dir, "yandex-disk")).Run()
-	os.Setenv("PATH", dir+":"+os.Getenv("PATH"))
+	Dir, _ := filepath.Split(exe)
+	exec.Command("mv", exe, filepath.Join(Dir, "yandex-disk")).Run()
+	os.Setenv("PATH", Dir+":"+os.Getenv("PATH"))
 	llog.Debug("Init completed")
 }
 
@@ -41,7 +46,7 @@ func TestNotInstalled(t *testing.T) {
 	// make PATH empty for test time
 	os.Setenv("PATH", "")
 	// test not_installed case
-	_, err := NewYDisk(cfg)
+	_, err := NewYDisk(Cfg)
 	if err == nil {
 		t.Error("Initialized with not installed daemon")
 	}
@@ -51,7 +56,7 @@ func TestNotInstalled(t *testing.T) {
 
 func TestWrongConf(t *testing.T) {
 	// test initialization with wrong/not-existing config
-	_, err := NewYDisk(cfg + "_bad")
+	_, err := NewYDisk(Cfg + "_bad")
 	if err == nil {
 		t.Error("Initialized with not existing daemon config file")
 	}
@@ -59,16 +64,15 @@ func TestWrongConf(t *testing.T) {
 
 func TestEmptyConf(t *testing.T) {
 	// test initialization with empty config
-	ecfg := "empty.cfg"
-	file, err := os.OpenFile(ecfg, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
+	file, err := os.OpenFile(Cfg, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		llog.Error(err)
 	} else {
-		file.Write([]byte("dir=\"no_dir\"\n\nproxy=\"no\"\n"))
+		file.Write([]byte("Dir=\"no_dir\"\n\nproxy=\"no\"\n"))
 		file.Close()
-		defer os.Remove(ecfg)
+		defer os.Remove(Cfg)
 
-		_, err = NewYDisk(ecfg)
+		_, err = NewYDisk(Cfg)
 		if err == nil {
 			t.Error("Initialized with empty config file")
 		}
@@ -78,11 +82,11 @@ func TestEmptyConf(t *testing.T) {
 
 func TestCreateSuccess(t *testing.T) {
 	// setup yandex-disk
-	err := os.MkdirAll(cfgpath, 0777)
+	err := os.MkdirAll(CfgPath, 0777)
 	if err != nil {
 		t.Error("config path creation error")
 	}
-	auth := filepath.Join(cfgpath, "passwd")
+	auth := filepath.Join(CfgPath, "passwd")
 	if notExists(auth) {
 		file, err := os.OpenFile(auth, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
 		if err != nil {
@@ -94,20 +98,20 @@ func TestCreateSuccess(t *testing.T) {
 		}
 		file.Close()
 	}
-	file, err := os.OpenFile(cfg, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
+	file, err := os.OpenFile(Cfg, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		llog.Critical(err)
 	} else {
-		_, err := file.Write([]byte("proxy=\"no\"\nauth=\"" + auth + "\"\ndir=\"" + dir + "\"\n\n"))
+		_, err := file.Write([]byte("proxy=\"no\"\nauth=\"" + auth + "\"\ndir=\"" + Dir + "\"\n\n"))
 		if err != nil {
 			t.Error("Can't create config file: ", err)
 		}
 	}
-	err = os.MkdirAll(dir, 0777)
+	err = os.MkdirAll(Dir, 0777)
 	if err != nil {
-		t.Error("synchronization dir creation error:", err)
+		t.Error("synchronization Dir creation error:", err)
 	}
-	YD, err = NewYDisk(cfg)
+	YD, err = NewYDisk(Cfg)
 	if err != nil {
 		t.Error("creation error of normally configured daemon")
 	}
