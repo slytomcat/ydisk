@@ -29,6 +29,10 @@ func init() {
 	Dir = os.ExpandEnv(SyncDir)
 	os.Setenv("DEBUG_SyncDir", Dir)
 	os.Setenv("DEBUG_ConfDir", CfgPath)
+	err := os.MkdirAll(CfgPath, 0755)
+	if err != nil {
+		log.Fatal(CfgPath, " creation error:", err)
+	}
 	// instll simulator for yandex-disk
 	exec.Command("go", "get", "github.com/slytomcat/yandex-disk-simulator").Run()
 	// rename simulator to original utility name
