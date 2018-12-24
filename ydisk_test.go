@@ -25,10 +25,10 @@ func init() {
 	llog.SetLevel(llog.DEBUG)
 	llog.SetFlags(log.Lshortfile | log.Lmicroseconds)
 	CfgPath = os.ExpandEnv(ConfigFilePath)
-	Cfg = filepath.Join(CfgPath, "config.Cfg")
+	Cfg = filepath.Join(CfgPath, "config.cfg")
 	Dir = os.ExpandEnv(SyncDir)
 	os.Setenv("DEBUG_SyncDir", Dir)
-	os.Setenv("DEBUG_ConfDi", CfgPath)
+	os.Setenv("DEBUG_ConfDir", CfgPath)
 	// instll simulator for yandex-disk
 	exec.Command("go", "get", "github.com/slytomcat/yandex-disk-simulator").Run()
 	// rename simulator to original utility name
