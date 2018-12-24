@@ -263,28 +263,32 @@ func (yd *YDisk) Output() string {
 }
 
 // Start runs `yandex-disk start` if daemon was not started before.
-func (yd *YDisk) Start() {
+func (yd *YDisk) Start() error {
 	if yd.getOutput(true) == "" {
 		out, err := exec.Command(yd.exe, "start", "-c", yd.conf).Output()
 		if err != nil {
 			llog.Error(err)
+			return err
 		}
 		llog.Debugf("Daemon start: %s", bytes.TrimRight(out, " \n"))
 	} else {
 		llog.Debug("Daemon already started")
 	}
 	yd.activate() // try to activate watching after daemon start. It shouldn't fail on started daemon
+	return nil
 }
 
 // Stop runs `yandex-disk stop` if daemon was not stopped before.
-func (yd *YDisk) Stop() {
+func (yd *YDisk) Stop() error {
 	if yd.getOutput(true) != "" {
 		out, err := exec.Command(yd.exe, "stop", "-c", yd.conf).Output()
 		if err != nil {
 			llog.Error(err)
+			return err
 		}
 		llog.Debugf("Daemon stop: %s", bytes.TrimRight(out, " \n"))
-		return
+	} else {
+		llog.Debug("Daemon already stopped")
 	}
-	llog.Debug("Daemon already stopped")
+	return nil
 }

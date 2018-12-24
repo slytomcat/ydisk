@@ -1,6 +1,7 @@
 package ydisk
 
 import (
+	"flag"
 	"log"
 	"os"
 	"os/exec"
@@ -21,7 +22,10 @@ const (
 	ConfigFilePath = "$HOME/.config/TeSt_Yandex.Disk_TeSt"
 )
 
-func init() {
+func TestMain(m *testing.M) {
+	flag.Parse()
+
+	// Initialization
 	llog.SetLevel(llog.DEBUG)
 	llog.SetFlags(log.Lshortfile | log.Lmicroseconds)
 	CfgPath = os.ExpandEnv(ConfigFilePath)
@@ -44,7 +48,18 @@ func init() {
 	exec.Command("mv", exe, filepath.Join(Dir, "yandex-disk")).Run()
 	os.Setenv("PATH", Dir+":"+os.Getenv("PATH"))
 	llog.Debug("Init completed")
+
+	// Run tests
+	e := m.Run()
+
+	// Clearance
+	os.RemoveAll(CfgPath)
+	os.RemoveAll(Dir)
+	os.Exit(e)
 }
+
+// func init() {
+// }
 
 func TestNotInstalled(t *testing.T) {
 	path := os.Getenv("PATH")
@@ -144,7 +159,10 @@ func TestInitialEvent(t *testing.T) {
 
 func TestStart(t *testing.T) {
 	var yds YDvals
-	YD.Start()
+	err := YD.Start()
+	if err != nil {
+		t.Error("daemon start error:", err)
+	}
 	select {
 	case yds = <-YD.Changes:
 		llog.Infof("%v", yds)
@@ -179,7 +197,10 @@ func TestStart2Idle(t *testing.T) {
 }
 
 func TestSecondaryStart(t *testing.T) {
-	YD.Start()
+	err := YD.Start()
+	if err != nil {
+		t.Error("daemon start error:", err)
+	}
 	select {
 	case <-YD.Changes:
 		t.Error("Event received within 3 sec interval after secondary start of daemon")
@@ -216,7 +237,10 @@ func TestBusy2Idle(t *testing.T) {
 }
 func TestStop(t *testing.T) {
 	var yds YDvals
-	YD.Stop()
+	err := YD.Stop()
+	if err != nil {
+		t.Error("daemon stop error:", err)
+	}
 	for {
 		select {
 		case yds = <-YD.Changes:
@@ -231,7 +255,10 @@ func TestStop(t *testing.T) {
 }
 
 func TestSecondaryStop(t *testing.T) {
-	YD.Stop()
+	err := YD.Stop()
+	if err != nil {
+		t.Error("daemon stop error:", err)
+	}
 	select {
 	case <-YD.Changes:
 		t.Error("Event received within 3 sec interval after secondary stop of daemon")
