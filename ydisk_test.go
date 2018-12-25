@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	Cfg, CfgPath, SyncDir string
-	YD                *YDisk
+	Cfg, CfgPath, SyncDir, SymExe string
+	YD                            *YDisk
 )
 
 const (
@@ -31,8 +31,8 @@ func TestMain(m *testing.M) {
 	CfgPath = os.ExpandEnv(ConfigFilePath)
 	Cfg = filepath.Join(CfgPath, "config.cfg")
 	SyncDir = os.ExpandEnv(SyncDirPath)
-	os.Setenv("DEBUG_SyncDir", SyncDir)
-	os.Setenv("DEBUG_ConfDir", CfgPath)
+	os.Setenv("Sim_SyncDir", SyncDir)
+	os.Setenv("Sim_ConfDir", CfgPath)
 	err := os.MkdirAll(CfgPath, 0755)
 	if err != nil {
 		log.Fatal(CfgPath, " creation error:", err)
@@ -45,16 +45,17 @@ func TestMain(m *testing.M) {
 		log.Fatal("yandex-disk simulator installation error:", err)
 	}
 	exeDir, _ := filepath.Split(exe)
-	exec.Command("mv", exe, filepath.Join(exeDir, "yandex-disk")).Run()
+	SymExe = filepath.Join(exeDir, "yandex-disk")
+	exec.Command("mv", exe, SymExe).Run()
 	os.Setenv("PATH", exeDir+":"+os.Getenv("PATH"))
-	llog.Debug("Init completed")
+	log.Println("Init completed")
 
 	// Run tests
 	e := m.Run()
 
 	// Clearance
-	os.RemoveAll(CfgPath)
-	os.RemoveAll(SyncDir)
+	//os.RemoveAll(CfgPath)
+	//os.RemoveAll(SyncDir)
 	os.Exit(e)
 }
 
@@ -101,35 +102,10 @@ func TestEmptyConf(t *testing.T) {
 }
 
 func TestCreateSuccess(t *testing.T) {
-	// setup yandex-disk
-	err := os.MkdirAll(CfgPath, 0777)
+	// prepare for similation
+	err := exec.Command(SymExe, "prepare").Run()
 	if err != nil {
-		t.Error("config path creation error")
-	}
-	auth := filepath.Join(CfgPath, "passwd")
-	if notExists(auth) {
-		file, err := os.OpenFile(auth, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
-		if err != nil {
-			llog.Critical("yandex-disk token file creation error:", err)
-		}
-		_, err = file.Write([]byte("token")) // yandex-disk-simulator doesn't require the real token
-		if err != nil {
-			llog.Critical("yandex-disk token file creation error:", err)
-		}
-		file.Close()
-	}
-	file, err := os.OpenFile(Cfg, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		llog.Critical(err)
-	} else {
-		_, err := file.Write([]byte("proxy=\"no\"\nauth=\"" + auth + "\"\ndir=\"" + SyncDir + "\"\n\n"))
-		if err != nil {
-			t.Error("Can't create config file: ", err)
-		}
-	}
-	err = os.MkdirAll(SyncDir, 0777)
-	if err != nil {
-		t.Error("synchronization Dir creation error:", err)
+		t.Fatal("simulation prepare error")
 	}
 	YD, err = NewYDisk(Cfg)
 	if err != nil {
