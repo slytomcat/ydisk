@@ -54,8 +54,8 @@ func TestMain(m *testing.M) {
 	e := m.Run()
 
 	// Clearance
-	//os.RemoveAll(CfgPath)
-	//os.RemoveAll(SyncDir)
+	os.RemoveAll(CfgPath)
+	os.RemoveAll(SyncDir)
 	os.Exit(e)
 }
 
