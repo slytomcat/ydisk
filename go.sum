@@ -1,0 +1,8 @@
+github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=
+github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
+github.com/slytomcat/llog v0.0.0-20181019073344-e5e77a7e5708 h1:RjYOrfIDjVN/qAEJFDnTF4dGeTlQTfVArQetmCdsAAs=
+github.com/slytomcat/llog v0.0.0-20181019073344-e5e77a7e5708/go.mod h1:l0Mcs3u4uKFjQZ1W5luGEPMznBpNtR+AoBJs5/XSp3o=
+github.com/slytomcat/yandex-disk-simulator v0.0.0-20181225164509-9be60ead49bf h1:7VJApr1sMVXq/SJB629V41Pz9YuD3mKmFJCdICHp1Y8=
+github.com/slytomcat/yandex-disk-simulator v0.0.0-20181225164509-9be60ead49bf/go.mod h1:eGnZP1FMyaG5BJAVMkC5aglVULFxuaaY0PUiPIfdzUo=
+golang.org/x/sys v0.0.0-20181228144115-9a3f9b0469bb h1:pf3XwC90UUdNPYWZdFjhGBE7DUFuK3Ct1zWmZ65QN30=
+golang.org/x/sys v0.0.0-20181228144115-9a3f9b0469bb/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
