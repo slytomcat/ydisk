@@ -103,7 +103,7 @@ func TestEmptyConf(t *testing.T) {
 
 func TestCreateSuccess(t *testing.T) {
 	// prepare for similation
-	err := exec.Command(SymExe, "prepare").Run()
+	err := exec.Command(SymExe, "setup").Run()
 	if err != nil {
 		t.Fatal("simulation prepare error")
 	}
