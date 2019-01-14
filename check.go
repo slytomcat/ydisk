@@ -1,10 +1,11 @@
 package ydisk
 
 import (
-	"os/exec"
+	"bufio"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/slytomcat/llog"
@@ -24,7 +25,7 @@ func notExists(path string) bool {
 // from program.
 // It returns the user catalogue that is synchronized by daemon in case of success check.
 func checkDaemon(conf string) (string, error) {
-	_, err  := exec.LookPath("yandex-disk")
+	_, err := exec.LookPath("yandex-disk")
 	if err != nil {
 		msg := "Yandex.Disk CLI utility is not installed. Install it first."
 		llog.Error(msg)
@@ -54,7 +55,7 @@ func checkDaemon(conf string) (string, error) {
 		}
 	}
 	if err != nil && err != io.EOF {
-		return err
+		return "", err
 	}
 	if notExists(dir) || notExists(auth) {
 		msg := "Daemon is not configured. First run: `yandex-disk setup`"
