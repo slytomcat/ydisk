@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 		log.Fatal(CfgPath, " creation error:", err)
 	}
 	// instll simulator for yandex-disk
-	exec.Command("go", "get", "github.com/slytomcat/yandex-disk-simulator").Run()
+	exec.Command("go", "get", "-u", "github.com/slytomcat/yandex-disk-simulator").Run()
 	// rename simulator to original utility name
 	exe, err := exec.LookPath("yandex-disk-simulator")
 	if err != nil {
