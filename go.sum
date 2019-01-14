@@ -6,5 +6,7 @@ github.com/slytomcat/yandex-disk-simulator v0.0.0-20190107200251-207ace62e091 h1
 github.com/slytomcat/yandex-disk-simulator v0.0.0-20190107200251-207ace62e091/go.mod h1:eGnZP1FMyaG5BJAVMkC5aglVULFxuaaY0PUiPIfdzUo=
 github.com/slytomcat/yandex-disk-simulator v0.0.0-20190114060233-16515759c65f h1:VFBvySuY7fSV0CDejjHa4NvMUxGNxG5KLMMUAzHpj20=
 github.com/slytomcat/yandex-disk-simulator v0.0.0-20190114060233-16515759c65f/go.mod h1:eGnZP1FMyaG5BJAVMkC5aglVULFxuaaY0PUiPIfdzUo=
+github.com/slytomcat/yandex-disk-simulator v0.0.0-20190114165426-33af4e73fb1c h1:Wttupb5QfxIt93c8tR8ag4Boge8uR8aeHV01et41fO0=
+github.com/slytomcat/yandex-disk-simulator v0.0.0-20190114165426-33af4e73fb1c/go.mod h1:eGnZP1FMyaG5BJAVMkC5aglVULFxuaaY0PUiPIfdzUo=
 golang.org/x/sys v0.0.0-20181228144115-9a3f9b0469bb h1:pf3XwC90UUdNPYWZdFjhGBE7DUFuK3Ct1zWmZ65QN30=
 golang.org/x/sys v0.0.0-20181228144115-9a3f9b0469bb/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
