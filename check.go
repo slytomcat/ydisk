@@ -36,27 +36,25 @@ func checkDaemon(conf string) (string, error) {
 		return "", err
 	}
 	defer f.Close()
-	reader := io.Reader(f)
-	line := ""
-	dir := ""
-	auth := ""
+	reader := bufio.NewReader(f)
+	var line, dir, auth string
 	for {
-		n, err := fmt.Fscanln(reader, &line)
-		if n == 0 {
+		line, err = reader.ReadString('\n')
+		if err != nil {
 			break
 		}
-		if err != nil {
-			llog.Error(err)
-		}
 		if strings.HasPrefix(line, "dir") {
-			dir = line[5 : len(line)-1]
+			dir = line[5 : len(line)-2]
 		}
 		if strings.HasPrefix(line, "auth") {
-			auth = line[6 : len(line)-1]
+			auth = line[6 : len(line)-2]
 		}
 		if dir != "" && auth != "" {
 			break
 		}
+	}
+	if err != nil && err != io.EOF {
+		return err
 	}
 	if notExists(dir) || notExists(auth) {
 		msg := "Daemon is not configured. First run: `yandex-disk setup`"
