@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func (val *YDvals) update(out string) bool {
+func (val *YDvals) update1(out string) bool {
 	val.Prev = val.Stat // store previous status but don't track changes of val.Prev
 	changed := false    // track changes for values
 	if out == "" {
