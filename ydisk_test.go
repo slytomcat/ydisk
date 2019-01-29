@@ -211,6 +211,20 @@ func TestBusy2Idle(t *testing.T) {
 		}
 	}
 }
+
+func TestError(t *testing.T) {
+	_ = exec.Command("yandex-disk", "error").Run()
+	select {
+	case yds := <-YD.Changes:
+		if yds.Stat == "error" && yds.ErrP != "" {
+			return
+		}
+		t.Error("Not error status received after error simulation started")
+	case <-time.After(time.Second * 2):
+		t.Error("No reaction within 2 seconds after error simulation started")
+	}
+}
+
 func TestStop(t *testing.T) {
 	var yds YDvals
 	err := YD.Stop()
