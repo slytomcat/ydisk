@@ -4,6 +4,8 @@ github.com/slytomcat/llog v0.0.0-20190104202300-c8978e4fae9a h1:fhFmg2geN1QrIdSM
 github.com/slytomcat/llog v0.0.0-20190104202300-c8978e4fae9a/go.mod h1:l0Mcs3u4uKFjQZ1W5luGEPMznBpNtR+AoBJs5/XSp3o=
 github.com/slytomcat/yandex-disk-simulator v0.0.0-20190129232511-c008f6f0213f h1:Hr6lfSJWJPuIFWzTF0lF9+BepNmjOg9jtPwEjTSsGbs=
 github.com/slytomcat/yandex-disk-simulator v0.0.0-20190129232511-c008f6f0213f/go.mod h1:zJUnT5tjPX5QDe/EC8s4CbACbY5InPwhrddR3mExF+s=
+github.com/slytomcat/yandex-disk-simulator v0.0.0-20190202171116-4b3395ddd90b h1:5gjti9AoRHRhO08ujtuppV855zf4eu5iaIsKRqi86n4=
+github.com/slytomcat/yandex-disk-simulator v0.0.0-20190202171116-4b3395ddd90b/go.mod h1:zJUnT5tjPX5QDe/EC8s4CbACbY5InPwhrddR3mExF+s=
 golang.org/x/sys v0.0.0-20190129075346-302c3dd5f1cc/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20190201073406-2970a3744de3 h1:T+tUZQaScsk3yasBxlZ8CMQMak4Nx61BBKZy88wELGY=
 golang.org/x/sys v0.0.0-20190201073406-2970a3744de3/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
