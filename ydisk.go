@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -18,17 +17,17 @@ import (
 
 // YDvals - Daemon Status structure
 type YDvals struct {
-	Stat   string   // Current Status
-	Prev   string   // Previous Status
-	Total  string   // Total space available
-	Used   string   // Used space
-	Free   string   // Free space
-	Trash  string   // Trash size
-	Last   []string // Last-updated files/folders list (10 or less items)
-	ChLast bool     // Indicator that Last was changed
-	Err    string   // Error status message
-	ErrP   string   // Error path
-	Prog   string   // Synchronization progress (when in busy status)
+	Stat   string         // Current Status
+	Prev   string         // Previous Status
+	Total  string         // Total space available
+	Used   string         // Used space
+	Free   string         // Free space
+	Trash  string         // Trash size
+	Last   []string       // Last-updated files/folders list (10 or less items)
+	ChLast bool           // Indicator that Last was changed
+	Err    string         // Error status message
+	ErrP   string         // Error path
+	Prog   string         // Synchronization progress (when in busy status)
 }
 
 /* A new YDvals constsructor */
@@ -65,50 +64,61 @@ func (val *YDvals) update(out string) bool {
 		}
 		return changed
 	}
-	split := strings.Split(out, "Last synchronized items:")
-	// Need to remove "Path to " as another "Path:" exists in case of access error
-	split[0] = strings.Replace(split[0], "Path to ", "", 1)
-	// Initialize map with keys that can be missed
-	keys := map[string]string{"Sync": "", "Error": "", "Path": ""}
-	// Take only first word in the phrase before ":"
-	for _, s := range regexp.MustCompile(`\s*([^ ]+).*: (.*)`).FindAllStringSubmatch(split[0], -1) {
-		if s[2][0] == byte('\'') {
-			s[2] = s[2][1 : len(s[2])-1] // remove ' in the begging and at end
-		}
-		keys[s[1]] = s[2]
-	}
-	// map representation of switch_case clause
-	for k, v := range map[string]*string{
-		"Synchronization": &val.Stat,
-		"Total":           &val.Total,
-		"Used":            &val.Used,
-		"Available":       &val.Free,
-		"Trash":           &val.Trash,
-		"Error":           &val.Err,
-		"Path":            &val.ErrP,
-		"Sync":            &val.Prog,
-	} {
-		setChanged(v, keys[k], &changed)
-	}
-	// Parse the "Last synchronized items" section (list of paths and files)
+	n := strings.Index(out, "Last synchronized items:")
 	val.ChLast = false // track last list changes separately
-	if len(split) > 1 {
-		f := regexp.MustCompile(`: '(.*)'\n`).FindAllStringSubmatch(split[1], -1)
+	if n > 0 {
+		// Parse the "Last synchronized items" section (list of paths and files)
+		f := make([]string, 0, 10)
+		for _, s := range strings.Split(out[n+24:], "\n") {
+			if s != "" {
+				f = append(f, s[strings.Index(s, ":")+3:len(s)-1])
+			}
+		}
 		if len(f) != len(val.Last) {
 			val.ChLast = true
-			val.Last = []string{}
-			for _, p := range f {
-				val.Last = append(val.Last, p[1])
-			}
+			val.Last = f
 		} else {
 			for i, p := range f {
-				setChanged(&val.Last[i], p[1], &val.ChLast)
+				setChanged(&val.Last[i], p, &val.ChLast)
 			}
 		}
-	} else { // len(split) = 1 - there is no section with last sync. paths
+	} else {
+		n = len(out)
 		if len(val.Last) > 0 {
 			val.Last = []string{}
 			val.ChLast = true
+		}
+	}
+
+	// Initialize map with keys that can be missed
+	keys := map[string]string{"Sync progress": "", "Error": "", "Path": ""}
+	for _, s := range strings.Split(out[:n], "\n") {
+		if n := strings.Index(s, ":"); n > 0 {
+			keys[strings.TrimSpace(s[:n])] = s[n+2:]
+		}
+	}
+	for k, v := range keys {
+		switch k {
+		case "Synchronization core status":
+			setChanged(&val.Stat, v, &changed)
+		case "Total":
+			setChanged(&val.Total, v, &changed)
+		case "Used":
+			setChanged(&val.Used, v, &changed)
+		case "Available":
+			setChanged(&val.Free, v, &changed)
+		case "Trash size":
+			setChanged(&val.Trash, v, &changed)
+		case "Sync progress":
+			setChanged(&val.Prog, v, &changed)
+		case "Error":
+			setChanged(&val.Err, v, &changed)
+		case "Path":
+			if v != "" {
+				setChanged(&val.ErrP, v[1:len(v)-1], &changed)
+			} else {
+				setChanged(&val.ErrP, "", &changed)
+			}
 		}
 	}
 	return changed || val.ChLast
