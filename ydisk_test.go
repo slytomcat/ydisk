@@ -2,6 +2,7 @@ package ydisk
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -49,18 +50,18 @@ func TestMain(m *testing.M) {
 	exec.Command("mv", exe, SymExe).Run()
 	os.Setenv("PATH", exeDir+":"+os.Getenv("PATH"))
 	log.Println("Init completed")
-
+	exec.Command(SymExe, "stop").Run()
+	os.RemoveAll("/tmp/yandexdisksimulator.socket")
 	// Run tests
 	e := m.Run()
 
 	// Clearance
 	os.RemoveAll(CfgPath)
 	os.RemoveAll(SyncDir)
+	exec.Command(SymExe, "stop").Run()
+	os.RemoveAll("/tmp/yandexdisksimulator.socket")
 	os.Exit(e)
 }
-
-// func init() {
-// }
 
 func TestNotInstalled(t *testing.T) {
 	path := os.Getenv("PATH")
@@ -124,12 +125,11 @@ func TestInitialEvent(t *testing.T) {
 	var yds YDvals
 	select {
 	case yds = <-YD.Changes:
-		llog.Infof("%v", yds)
+		if fmt.Sprintf("%v", yds) != "{none unknown     [] true   }" {
+			t.Error("Incorrect change object:", yds)
+		}
 	case <-time.After(time.Second):
 		t.Error("No events received within 1 sec interval after YDisk creation")
-	}
-	if yds.Stat != "none" {
-		t.Error("Not 'none' status received from inactive daemon")
 	}
 }
 
@@ -141,12 +141,11 @@ func TestStart(t *testing.T) {
 	}
 	select {
 	case yds = <-YD.Changes:
-		llog.Infof("%v", yds)
+		if fmt.Sprintf("%v", yds) != "{paused none     [File.ods downloads/file.deb downloads/setup download down do d o w n] true   }" {
+			t.Error("Incorrect change object:", yds)
+		}
 	case <-time.After(time.Second * 3):
 		t.Error("No events received within 3 sec interval after daemon start")
-	}
-	if yds.Stat == "none" {
-		t.Error("'none' status received from started daemon")
 	}
 }
 
@@ -163,6 +162,9 @@ func TestStart2Idle(t *testing.T) {
 		select {
 		case yds = <-YD.Changes:
 			if yds.Stat == "idle" {
+				if fmt.Sprintf("%v", yds) != "{idle index 43.50 GB 2.89 GB 40.61 GB 0 B [File.ods downloads/file.deb downloads/setup download down do d o w n] false   }" {
+					t.Error("Incorrect change object:", yds)
+				}
 				return
 			}
 		case <-time.After(time.Second * 30):
@@ -189,6 +191,9 @@ func TestReaction(t *testing.T) {
 	select {
 	case yds := <-YD.Changes:
 		if yds.Stat == "index" || yds.Stat == "busy" {
+			if fmt.Sprintf("%v", yds) != "{index idle 43.50 GB 2.89 GB 40.61 GB 0 B [File.ods downloads/file.deb downloads/setup download down do d o w n] false   }" {
+				t.Error("Incorrect change object:", yds)
+			}
 			return
 		}
 		t.Error("Not index/busy status received after sync started")
@@ -203,6 +208,9 @@ func TestBusy2Idle(t *testing.T) {
 		select {
 		case yds = <-YD.Changes:
 			if yds.Stat == "idle" {
+				if fmt.Sprintf("%v", yds) != "{idle index 43.50 GB 2.89 GB 40.61 GB 0 B [File.ods downloads/file.deb downloads/setup download down do d o w n] true   }" {
+					t.Error("Incorrect change object:", yds)
+				}
 				return
 			}
 		case <-time.After(time.Second * 10):
@@ -216,7 +224,10 @@ func TestError(t *testing.T) {
 	_ = exec.Command("yandex-disk", "error").Run()
 	select {
 	case yds := <-YD.Changes:
-		if yds.Stat == "error" && yds.ErrP != "" {
+		if yds.Stat == "error" {
+			if fmt.Sprintf("%v", yds) != "{error idle 43.50 GB 2.88 GB 40.62 GB 654.48 MB [File.ods downloads/file.deb downloads/setup download down do d o w n] false access error downloads/test1 }" {
+				t.Error("Incorrect change object:", yds)
+			}
 			return
 		}
 		t.Error("Not error status received after error simulation started")
@@ -235,6 +246,9 @@ func TestStop(t *testing.T) {
 		select {
 		case yds = <-YD.Changes:
 			if yds.Stat == "none" {
+				if fmt.Sprintf("%v", yds) != "{none error     [] true   }" {
+					t.Error("Incorrect change object:", yds)
+				}
 				return
 			}
 		case <-time.After(time.Second * 3):
