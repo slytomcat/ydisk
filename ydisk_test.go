@@ -49,17 +49,18 @@ func TestMain(m *testing.M) {
 	SymExe = filepath.Join(exeDir, "yandex-disk")
 	exec.Command("mv", exe, SymExe).Run()
 	os.Setenv("PATH", exeDir+":"+os.Getenv("PATH"))
-	log.Println("Init completed")
 	exec.Command(SymExe, "stop").Run()
 	os.RemoveAll("/tmp/yandexdisksimulator.socket")
+	log.Println("Init completed")
+
 	// Run tests
 	e := m.Run()
 
 	// Clearance
-	os.RemoveAll(CfgPath)
-	os.RemoveAll(SyncDir)
 	exec.Command(SymExe, "stop").Run()
 	os.RemoveAll("/tmp/yandexdisksimulator.socket")
+	os.RemoveAll(CfgPath)
+	os.RemoveAll(SyncDir)
 	os.Exit(e)
 }
 
