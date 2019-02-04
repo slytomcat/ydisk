@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/slytomcat/llog"
@@ -17,17 +18,17 @@ import (
 
 // YDvals - Daemon Status structure
 type YDvals struct {
-	Stat   string         // Current Status
-	Prev   string         // Previous Status
-	Total  string         // Total space available
-	Used   string         // Used space
-	Free   string         // Free space
-	Trash  string         // Trash size
-	Last   []string       // Last-updated files/folders list (10 or less items)
-	ChLast bool           // Indicator that Last was changed
-	Err    string         // Error status message
-	ErrP   string         // Error path
-	Prog   string         // Synchronization progress (when in busy status)
+	Stat   string   // Current Status
+	Prev   string   // Previous Status
+	Total  string   // Total space available
+	Used   string   // Used space
+	Free   string   // Free space
+	Trash  string   // Trash size
+	Last   []string // Last-updated files/folders list (10 or less items)
+	ChLast bool     // Indicator that Last was changed
+	Err    string   // Error status message
+	ErrP   string   // Error path
+	Prog   string   // Synchronization progress (when in busy status)
 }
 
 /* A new YDvals constsructor */
@@ -69,9 +70,15 @@ func (val *YDvals) update(out string) bool {
 	if n > 0 {
 		// Parse the "Last synchronized items" section (list of paths and files)
 		f := make([]string, 0, 10)
-		for _, s := range strings.Split(out[n+24:], "\n") {
-			if s != "" {
-				f = append(f, s[strings.Index(s, ":")+3:len(s)-1])
+		files := out[n+24:]
+		for {
+			if p := strings.Index(files, "\n"); p < 0 {
+				break
+			} else {
+				if p > 8 {
+					f = append(f, files[strings.Index(files, ":")+3:p-1])
+				}
+				files = files[p+1:]
 			}
 		}
 		if len(f) != len(val.Last) {
@@ -82,19 +89,28 @@ func (val *YDvals) update(out string) bool {
 				setChanged(&val.Last[i], p, &val.ChLast)
 			}
 		}
-	} else {
+	} else { // There is no "Last synchronized items" section
 		n = len(out)
 		if len(val.Last) > 0 {
 			val.Last = []string{}
 			val.ChLast = true
 		}
 	}
-
+	// Parse disk values and status
 	// Initialize map with keys that can be missed
-	keys := map[string]string{"Sync progress": "", "Error": "", "Path": ""}
-	for _, s := range strings.Split(out[:n], "\n") {
-		if n := strings.Index(s, ":"); n > 0 {
-			keys[strings.TrimSpace(s[:n])] = s[n+2:]
+	keys := make(map[string]string, 10)
+	keys["Sync progress"] = ""
+	keys["Error"] = ""
+	keys["Path"] = ""
+	vals := out[:n]
+	for {
+		if p := strings.Index(vals, "\n"); p < 0 {
+			break
+		} else {
+			if n := strings.Index(vals[:p], ":"); n > 0 {
+				keys[strings.TrimLeftFunc(vals[:n], unicode.IsSpace)] = vals[n+2 : p]
+			}
+			vals = vals[p+1:]
 		}
 	}
 	for k, v := range keys {
@@ -230,14 +246,14 @@ func (yd *YDisk) eventHandler(watch watcher) {
 			if yds.Stat == "busy" || yds.Stat == "index" {
 				interval = 2 // keep 2s interval in busy mode
 			} else {
-				interval <<= 1 // continuously increase timer interval: 2s, 4s, 8s.
+				if interval < 32 {
+					interval <<= 1 // continuously increase timer interval: 2s, 4s, 8s.
+				}
 			}
 		}
 		// in both cases (Timer or Watcher events):
 		//  - restart timer
-		if interval < 10 {
-			tick.Reset(time.Duration(interval) * time.Second)
-		}
+		tick.Reset(time.Duration(interval) * time.Second)
 		//  - check for daemon changes and send changed values in case of change
 		if yds.update(yd.getOutput(false)) {
 			llog.Debug("Change: ", yds.Prev, ">", yds.Stat,
@@ -255,7 +271,7 @@ func (yd YDisk) getOutput(userLang bool) string {
 	}
 	out, err := exec.Command(cmd[0], cmd[1:]...).Output()
 	if err != nil {
-		llog.Debug("daemon status error:" + err.Error())
+		//llog.Debug("daemon status error:" + err.Error())
 		return ""
 	}
 	return string(out)
