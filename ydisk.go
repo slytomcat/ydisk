@@ -34,12 +34,17 @@ type YDvals struct {
 /* A new YDvals constsructor */
 func newYDvals() YDvals {
 	return YDvals{
-		"unknown",      // Current Status
-		"unknown",      // Previous Status
-		"", "", "", "", // Total, Used, Free, Trash
-		[]string{}, // Last
-		false,      // ChLast
-		"", "", "", // Err, ErrP, Prog
+		Stat:   "unknown",
+		Prev:   "unknown",
+		Total:  "",
+		Used:   "",
+		Free:   "",
+		Trash:  "",
+		Last:   []string{},
+		ChLast: true,
+		Err:    "",
+		ErrP:   "",
+		Prog:   "",
 	}
 }
 
@@ -57,8 +62,7 @@ func (val *YDvals) update(out string) bool {
 	val.Prev = val.Stat // store previous status but don't track changes of val.Prev
 	changed := false    // track changes for values
 	if out == "" {
-		setChanged(&val.Stat, "none", &changed)
-		if changed {
+		if setChanged(&val.Stat, "none", &changed); changed {
 			val.Total, val.Used, val.Trash, val.Free = "", "", "", ""
 			val.Prog, val.Err, val.ErrP, val.ChLast = "", "", "", true
 			val.Last = []string{}
@@ -78,7 +82,7 @@ func (val *YDvals) update(out string) bool {
 				if p > 8 {
 					f = append(f, files[strings.Index(files, ":")+3:p-1])
 				}
-				files = files[p+1:]
+				files = files[p+len("\n"):]
 			}
 		}
 		if len(f) != len(val.Last) {
