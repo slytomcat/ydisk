@@ -195,15 +195,11 @@ type YDisk struct {
 //
 // When something not good NewYDisk returns not nil error
 func NewYDisk(conf string) (*YDisk, error) {
-	path, err := checkDaemon(conf)
+	exe, path, err := checkDaemon(conf)
 	if err != nil {
 		return nil, err
 	}
 	watch := newwatcher()
-	exe, err := exec.LookPath("yandex-disk")
-	if err != nil {
-		return nil, err
-	}
 	llog.Debug("yandex-disk executable is:", exe)
 	yd := YDisk{
 		path,
