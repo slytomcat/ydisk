@@ -6,6 +6,7 @@ package ydisk
 
 import (
 	"bytes"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -265,9 +266,9 @@ func (yd *YDisk) eventHandler(watch watcher) {
 }
 
 func (yd YDisk) getOutput(userLang bool) string {
-	cmd := []string{"env", "-i", yd.exe, "status", "-c", yd.conf}
-	if userLang {
-		cmd = cmd[2:]
+	cmd := []string{yd.exe, "status", "-c", yd.conf}
+	if !userLang {
+		cmd = append([]string{"env", "-i", "TEMP=" + os.TempDir()}, cmd...)
 	}
 	out, err := exec.Command(cmd[0], cmd[1:]...).Output()
 	if err != nil {

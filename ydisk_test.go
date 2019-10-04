@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"testing"
 	"time"
@@ -50,7 +51,7 @@ func TestMain(m *testing.M) {
 	exec.Command("mv", exe, SymExe).Run()
 	os.Setenv("PATH", exeDir+":"+os.Getenv("PATH"))
 	exec.Command(SymExe, "stop").Run()
-	os.RemoveAll("/tmp/yandexdisksimulator.socket")
+	os.RemoveAll(path.Join(os.TempDir(), "yandexdisksimulator.socket"))
 	log.Println("Init completed")
 
 	// Run tests
@@ -58,7 +59,7 @@ func TestMain(m *testing.M) {
 
 	// Clearance
 	exec.Command(SymExe, "stop").Run()
-	os.RemoveAll("/tmp/yandexdisksimulator.socket")
+	os.RemoveAll(path.Join(os.TempDir(), "yandexdisksimulator.socket"))
 	os.RemoveAll(CfgPath)
 	os.RemoveAll(SyncDir)
 	os.Exit(e)
