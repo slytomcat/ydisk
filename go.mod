@@ -7,3 +7,5 @@ require (
 	github.com/slytomcat/yandex-disk-simulator v0.0.0-20190202171116-4b3395ddd90b // indirect
 	golang.org/x/sys v0.0.0-20190226215855-775f8194d0f9 // indirect
 )
+
+go 1.13
