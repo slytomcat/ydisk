@@ -50,12 +50,12 @@ func TestMain(m *testing.M) {
 		log.Fatal("yandex-disk simulator installation error:", err)
 	}
 	exeDir, _ := filepath.Split(exe)
-	SymExe = filepath.Join(exeDir, "yandex-disk")
+	SymExe = filepath.Join(exeDir, "./yandex-disk")
 	exec.Command("mv", exe, SymExe).Run()
 	os.Setenv("PATH", exeDir+":"+os.Getenv("PATH"))
 	exec.Command(SymExe, "stop").Run()
 	os.RemoveAll(path.Join(os.TempDir(), "yandexdisksimulator.socket"))
-	log.Println("Init completed")
+	log.Println("Tests init completed")
 
 	// Run tests
 	e := m.Run()
@@ -65,11 +65,15 @@ func TestMain(m *testing.M) {
 	os.RemoveAll(path.Join(os.TempDir(), "yandexdisksimulator.socket"))
 	os.RemoveAll(CfgPath)
 	os.RemoveAll(SyncDir)
+	log.Println("Tests clearance completed")
 	os.Exit(e)
 }
 
 func TestNotInstalled(t *testing.T) {
-	path := os.Getenv("PATH")
+	// defer restore original PATH value
+	defer func(p string) {
+		os.Setenv("PATH", p)
+	}(os.Getenv("PATH"))
 	// make PATH empty for test time
 	os.Setenv("PATH", "")
 	// test not_installed case
@@ -77,8 +81,6 @@ func TestNotInstalled(t *testing.T) {
 	if err == nil {
 		t.Error("Initialized with not installed daemon")
 	}
-	// restore original PATH value
-	os.Setenv("PATH", path)
 }
 
 func TestWrongConf(t *testing.T) {

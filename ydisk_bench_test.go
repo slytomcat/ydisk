@@ -39,28 +39,65 @@ func BenchmarkYDvalUpdateOrig(b *testing.B) {
 	}
 }
 
-func BenchmarkYDiskgetOutput(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		st, err := exec.Command("/usr/bin/yandex-disk", "status").Output()
-		if err != nil || len(st) == 0 {
-			b.Error(err)
-		}
-	}
-}
+// func BenchmarkYDiskgetOutput(b *testing.B) {
+// 	// prepare for similation
+// 	err := exec.Command(SymExe, "setup").Run()
+// 	if err != nil {
+// 		b.Fatal("simulation prepare error")
+// 	}
+// 	out, err := exec.Command(SymExe, "start").Output()
+// 	if err != nil {
+// 		b.Fatal("simulation prepare error " + SymExe + err.Error() + string(out))
+// 	}
+// 	<-time.After(time.Second)
+// 	defer func() {
+// 		err := exec.Command(SymExe, "stop").Run()
+// 		if err != nil {
+// 			b.Fatal("simulation prepare error " + SymExe + err.Error() + string(out))
+// 		}
+// 	}()
 
-func BenchmarkYDiskgetOutput2(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		c := exec.Command("/usr/bin/yandex-disk", "status")
-		var stdout bytes.Buffer
-		//stdout.Grow(256)
-		c.Stdout = &stdout
-		err := c.Run()
-		st := stdout.Bytes()
-		if err != nil || len(st) == 0 {
-			b.Error(err)
-		}
-	}
-}
+// 	for i := 0; i < b.N; i++ {
+// 		st, err := exec.Command(SymExe, "status").Output()
+// 		if err != nil {
+// 			b.Fatal("simulation prepare error " + SymExe + err.Error())
+// 		}
+// 		if len(st) == 0 {
+// 			b.Fatal("simulation error: empty output")
+// 		}
+
+// 	}
+// }
+
+// func BenchmarkYDiskgetOutput2(b *testing.B) {
+// 	// prepare for similation
+// 	err := exec.Command(SymExe, "setup").Run()
+// 	if err != nil {
+// 		b.Fatal("simulation prepare error")
+// 	}
+// 	out, err := exec.Command(SymExe, "start").Output()
+// 	if err != nil {
+// 		b.Fatal("simulation prepare error " + SymExe + err.Error() + string(out))
+// 	}
+// 	defer func() {
+// 		err := exec.Command(SymExe, "stop").Run()
+// 		if err != nil {
+// 			b.Fatal("simulation stop error " + err.Error())
+// 		}
+// 	}()
+
+// 	for i := 0; i < b.N; i++ {
+// 		c := exec.Command(SymExe, "status")
+// 		var stdout bytes.Buffer
+// 		//stdout.Grow(256)
+// 		c.Stdout = &stdout
+// 		err := c.Run()
+// 		st := stdout.Bytes()
+// 		if err != nil || len(st) == 0 {
+// 			b.Error(err)
+// 		}
+// 	}
+// }
 
 func BenchmarkEchoCmdOutput(b *testing.B) {
 	for i := 0; i < b.N; i++ {
@@ -88,16 +125,16 @@ func BenchmarkSetChanged(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		a := "none"
 		c := false
-		setChanged1(&a, "idle", &c)
-		setChanged1(&a, "idle", &c)
-		setChanged1(&a, "none", &c)
-		setChanged1(&a, "none", &c)
-		setChanged1(&a, "idle", &c)
-		setChanged1(&a, "idle", &c)
-		setChanged1(&a, "none", &c)
-		setChanged1(&a, "none", &c)
-		setChanged1(&a, "idle", &c)
-		setChanged1(&a, "idle", &c)
+		setChanged(&a, "idle", &c)
+		setChanged(&a, "idle", &c)
+		setChanged(&a, "none", &c)
+		setChanged(&a, "none", &c)
+		setChanged(&a, "idle", &c)
+		setChanged(&a, "idle", &c)
+		setChanged(&a, "none", &c)
+		setChanged(&a, "none", &c)
+		setChanged(&a, "idle", &c)
+		setChanged(&a, "idle", &c)
 	}
 }
 
