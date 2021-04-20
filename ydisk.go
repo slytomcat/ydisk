@@ -260,6 +260,8 @@ func (yd *YDisk) eventHandler(watch watcher) {
 			llog.Debug("Change: ", yds.Prev, ">", yds.Stat,
 				"S", len(yds.Total) > 0, "L", len(yds.Last), "E", len(yds.Err) > 0)
 			yd.Changes <- yds
+			// in case of any change reset the timer intrval
+			interval = 1
 		}
 		//llog.Debug("Event processed")
 	}
