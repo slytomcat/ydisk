@@ -54,9 +54,12 @@ func TestMain(m *testing.M) {
 	// exec.Command("mv", exe, SymExe).Run()
 	// os.Setenv("PATH", exeDir+":"+os.Getenv("PATH"))
 
-	SymExe, err = exec.LookPath("yandex-disk")
+	SymExe, err = exec.LookPath("yandex-disk-simulator")
 	if err != nil {
-		log.Fatal("yandex-disk utility lookup error:", err)
+		SymExe, err = exec.LookPath("yandex-disk")
+		if err != nil {
+			log.Fatal("yandex-disk or simulator lookup error:", err)
+		}
 	}
 
 	exec.Command(SymExe, "stop").Run()
