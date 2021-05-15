@@ -26,10 +26,14 @@ jobs:
             mkdir results
       - run:
           name: Prepare similator
-          command: go get -u github.com/slytomcat/yandex-disk-simulator 
+          command: |
+            go get -u github.com/slytomcat/yandex-disk-simulator
+            cp $(which yandex-disk-simulator) yandex-disk 
       - run:
           name: Tests
-          command: go test -v -race -coverprofile cover.out 2>&1 | tee /dev/tty | go-junit-report > results/results.xml
+          command: |
+            export PATH=$(pwd):$PATH
+            go test -v -race -coverprofile cover.out 2>&1 | tee /dev/tty | go-junit-report > results/results.xml
       - run: 
           name: Format coverage
           command: go tool cover -html=cover.out -o coverage.html
