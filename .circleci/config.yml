@@ -29,10 +29,11 @@ jobs:
           command: |
             wget https://github.com/slytomcat/yandex-disk-simulator/releases/download/v.0.7.4/yandex-disk-simulator-linux-amd64 -o yandex-disk
             chmod a+rx yandex-disk
-            export PATH=$(pwd):$PATH
       - run:
           name: Tests
-          command: go test -v -race -coverprofile cover.out 2>&1 | tee /dev/tty | go-junit-report > results/results.xml
+          command: |
+            export PATH=$(pwd):$PATH
+            go test -v -race -coverprofile cover.out 2>&1 | tee /dev/tty | go-junit-report > results/results.xml
       - run: 
           name: Format coverage
           command: go tool cover -html=cover.out -o coverage.html
