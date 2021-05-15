@@ -22,12 +22,12 @@ jobs:
       - run: 
           name: Prepare reporting
           command: |
-            go get -u github.com/jstemmer/go-junit-report;
-            mkdir results;
+            go get -u github.com/jstemmer/go-junit-report
+            mkdir results
       - run:
           name: Prepare similator
           command: |
-            wget https://github.com/slytomcat/yandex-disk-simulator/releases/download/v.0.7.4/yandex-disk-simulator-linux-amd64 -o yandex-disk
+            wget https://github.com/slytomcat/yandex-disk-simulator/releases/download/v.0.7.4/yandex-disk-simulator-linux-386 -o yandex-disk
             chmod a+rx yandex-disk
       - run:
           name: Tests
