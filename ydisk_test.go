@@ -40,22 +40,28 @@ func TestMain(m *testing.M) {
 		log.Fatal(CfgPath, " creation error:", err)
 	}
 	// get and build simulator for yandex-disk
-	err = exec.Command("go", "get", "-u", "github.com/slytomcat/yandex-disk-simulator").Run()
-	if err != nil {
-		log.Fatal("yandex-disk simulator building error:", err)
-	}
+	// err = exec.Command("go", "get", "-u", "github.com/slytomcat/yandex-disk-simulator").Run()
+	// if err != nil {
+	// 	log.Fatal("yandex-disk simulator building error:", err)
+	// }
 	// rename simulator to original utility name
-	exe, err := exec.LookPath("yandex-disk-simulator")
+	// exe, err := exec.LookPath("yandex-disk-simulator")
+	// if err != nil {
+	// 	log.Fatal("yandex-disk simulator installation error:", err)
+	// }
+	// exeDir, _ := filepath.Split(exe)
+	// SymExe = filepath.Join(exeDir, "./yandex-disk")
+	// exec.Command("mv", exe, SymExe).Run()
+	// os.Setenv("PATH", exeDir+":"+os.Getenv("PATH"))
+
+	SymExe, err = exec.LookPath("yandex-disk")
 	if err != nil {
-		log.Fatal("yandex-disk simulator installation error:", err)
+		log.Fatal("yandex-disk utility lookup error:", err)
 	}
-	exeDir, _ := filepath.Split(exe)
-	SymExe = filepath.Join(exeDir, "./yandex-disk")
-	exec.Command("mv", exe, SymExe).Run()
-	os.Setenv("PATH", exeDir+":"+os.Getenv("PATH"))
+
 	exec.Command(SymExe, "stop").Run()
 	os.RemoveAll(path.Join(os.TempDir(), "yandexdisksimulator.socket"))
-	log.Println("Tests init completed")
+	log.Printf("Tests init completed: yd exe: %v", SymExe)
 
 	// Run tests
 	e := m.Run()
@@ -113,7 +119,7 @@ func TestCreateSuccess(t *testing.T) {
 	// prepare for similation
 	err := exec.Command(SymExe, "setup").Run()
 	if err != nil {
-		t.Fatal("simulation prepare error")
+		t.Fatalf("simulation prepare error: %v", err)
 	}
 	YD, err = NewYDisk(Cfg)
 	if err != nil {

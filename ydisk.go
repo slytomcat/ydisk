@@ -177,12 +177,12 @@ func (w *watcher) activate(path string) {
 // of synchronized catalogue (property Path) and channel for receiving yandex-disk status
 // changes (property Changes).
 type YDisk struct {
-	Path     string      // Path to synchronized folder (obtained from yandex-disk conf. file)
-	Changes  chan YDvals // Output channel for detected changes in daemon status
-	conf     string      // Path to yandex-disc configuration file
-	exe      string      // Path to yandex-disk executable
-	exit     chan bool   // Stop signal/replay channel for Event handler routine
-	activate func()      // Function to activate watcher after daemon creation
+	Path     string        // Path to synchronized folder (obtained from yandex-disk conf. file)
+	Changes  chan YDvals   // Output channel for detected changes in daemon status
+	conf     string        // Path to yandex-disc configuration file
+	exe      string        // Path to yandex-disk executable
+	exit     chan struct{} // Stop signal/replay channel for Event handler routine
+	activate func()        // Function to activate watcher after daemon creation
 }
 
 // NewYDisk creates new YDisk structure for communication with yandex-disk daemon
@@ -207,7 +207,7 @@ func NewYDisk(conf string) (*YDisk, error) {
 		make(chan YDvals, 1), // Output should be buffered
 		conf,
 		exe,
-		make(chan bool),
+		make(chan struct{}),
 		func() { watch.activate(path) },
 	}
 	// start event handler in separate goroutine
@@ -230,7 +230,7 @@ func (yd *YDisk) eventHandler(watch watcher) {
 		tick.Stop()
 		close(yd.Changes)
 		llog.Debug("Event handler exited")
-		yd.exit <- true // Report exit completion
+		yd.exit <- struct{}{} // Report exit completion
 	}()
 	for {
 		select {
@@ -283,7 +283,7 @@ func (yd YDisk) getOutput(userLang bool) string {
 // Close deactivates the daemon connection: stops event handler that closes file watcher
 // and Changes channel.
 func (yd *YDisk) Close() {
-	yd.exit <- true
+	yd.exit <- struct{}{}
 	<-yd.exit // Wait for the event handler completion
 }
 

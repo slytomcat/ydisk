@@ -2,28 +2,34 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.13
+      - image: circleci/golang:1.16
     steps:
       - checkout
       - run: 
           name: Get dependencies
-          command: go get ./...
+          command: go mod tidy
       - run: 
           name: Build
           command: go build
   test:
     docker:
-      - image: circleci/golang:1.13
+      - image: circleci/golang:1.16
     steps:
       - checkout
       - run: 
           name: Get dependencies
-          command: go get ./...
+          command: go mod tidy
       - run: 
-          name: Prepare
+          name: Prepare reporting
           command: |
             go get -u github.com/jstemmer/go-junit-report;
             mkdir results;
+      - run:
+          name: Prepare similator
+          command: |
+            wget https://github.com/slytomcat/yandex-disk-simulator/releases/download/v.0.7.4/yandex-disk-simulator-linux-amd64 -o yandex-disk
+            chmod a+rx yandex-disk
+            export PATH=$(pwd):$PATH
       - run:
           name: Tests
           command: go test -v -race -coverprofile cover.out 2>&1 | tee /dev/tty | go-junit-report > results/results.xml
