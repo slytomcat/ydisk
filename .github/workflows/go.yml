@@ -1,0 +1,40 @@
+name: Go
+on:
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+    branches:
+      - master
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.18
+      - name: Cache
+        uses: actions/cache@v2.1.6
+        with:
+          path: |
+            /home/runner/.cache/go-build/
+            /home/runner/go/pkg/mod/
+          key: GO_MOD_CACHE
+      - name: Prepare similator
+        run: |
+          go install github.com/slytomcat/yandex-disk-simulator@latest 
+          mv $(which yandex-disk-simulator) yandex-disk
+      - name: Test
+        run: |
+          export PATH=$(pwd):$PATH
+          go test -v --race -coverprofile cover.out ./...
+      - name: Format coverage
+        run: go tool cover -html=cover.out -o coverage.html
+      - name: Upload coverage to Artifacts
+        uses: actions/upload-artifact@v2.2.2
+        with:
+          name: coverage_artifacts
+          path: coverage.html

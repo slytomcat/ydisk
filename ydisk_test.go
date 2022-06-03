@@ -101,184 +101,183 @@ func TestEmptyConf(t *testing.T) {
 	}
 }
 
-func TestCreateSuccess(t *testing.T) {
+func TestFull(t *testing.T) {
 	// prepare for similation
 	err := exec.Command(SymExe, "setup").Run()
 	if err != nil {
 		t.Fatalf("simulation prepare error: %v", err)
 	}
-	YD, err = NewYDisk(Cfg)
-	if err != nil {
-		t.Error("creation error of normally configured daemon")
-	}
-}
-
-func TestOutputNotStarted(t *testing.T) {
-	output := YD.Output()
-	if output != "" {
-		t.Error("Non-empty response from inactive daemon")
-	}
-}
-
-func TestInitialEvent(t *testing.T) {
+	var YD *YDisk
 	var yds YDvals
-	select {
-	case yds = <-YD.Changes:
-		if fmt.Sprintf("%v", yds) != "{none unknown     [] true   }" {
-			t.Error("Incorrect change object:", yds)
+	t.Run("start", func(t *testing.T) {
+		YD, err = NewYDisk(Cfg)
+		if err != nil {
+			t.Error("creation error of normally configured daemon")
 		}
-	case <-time.After(time.Second):
-		t.Error("No events received within 1 sec interval after YDisk creation")
-	}
-}
+	})
 
-func TestStart(t *testing.T) {
-	var yds YDvals
-	err := YD.Start()
-	if err != nil {
-		t.Error("daemon start error:", err)
-	}
-	select {
-	case yds = <-YD.Changes:
-		if fmt.Sprintf("%v", yds) != "{paused none     [File.ods downloads/file.deb downloads/setup download down do d o w n] true   }" {
-			t.Error("Incorrect change object:", yds)
+	t.Run("NotStartedOupput", func(t *testing.T) {
+		output := YD.Output()
+		if output != "" {
+			t.Error("Non-empty response from inactive daemon")
 		}
-	case <-time.After(time.Second * 3):
-		t.Error("No events received within 3 sec interval after daemon start")
-	}
-}
+	})
 
-func TestOutputStarted(t *testing.T) {
-	output := YD.Output()
-	if output == "" {
-		t.Error("Empty response from started daemon")
-	}
-}
-
-func TestStart2Idle(t *testing.T) {
-	var yds YDvals
-	for {
+	t.Run("InitialEvent", func(t *testing.T) {
 		select {
 		case yds = <-YD.Changes:
-			if yds.Stat == "idle" {
-				if fmt.Sprintf("%v", yds) != "{idle index 43.50 GB 2.89 GB 40.61 GB 0 B [File.ods downloads/file.deb downloads/setup download down do d o w n] false   }" {
-					t.Error("Incorrect change object:", yds)
-				}
-				return
-			}
-		case <-time.After(time.Second * 30):
-			t.Error("No 'idle' status received within 30 sec interval after daemon start")
-			return
-		}
-	}
-}
-
-func TestSecondaryStart(t *testing.T) {
-	err := YD.Start()
-	if err != nil {
-		t.Error("daemon start error:", err)
-	}
-	select {
-	case <-YD.Changes:
-		t.Error("Event received within 3 sec interval after secondary start of daemon")
-	case <-time.After(time.Second * 3):
-	}
-}
-
-func TestReaction(t *testing.T) {
-	_ = exec.Command("yandex-disk", "sync").Run()
-	select {
-	case yds := <-YD.Changes:
-		if yds.Stat == "index" || yds.Stat == "busy" {
-			if fmt.Sprintf("%v", yds) != "{index idle 43.50 GB 2.89 GB 40.61 GB 0 B [File.ods downloads/file.deb downloads/setup download down do d o w n] false   }" {
+			if fmt.Sprintf("%v", yds) != "{none unknown     [] true   }" {
 				t.Error("Incorrect change object:", yds)
 			}
-			return
+		case <-time.After(time.Second):
+			t.Error("No events received within 1 sec interval after YDisk creation")
 		}
-		t.Error("Not index/busy status received after sync started")
-	case <-time.After(time.Second * 2):
-		t.Error("No reaction within 2 seconds after sync started")
-	}
-}
+	})
 
-func TestBusy2Idle(t *testing.T) {
-	var yds YDvals
-	for {
+	t.Run("Start", func(t *testing.T) {
+		err = YD.Start()
+		if err != nil {
+			t.Error("daemon start error:", err)
+		}
 		select {
 		case yds = <-YD.Changes:
-			if yds.Stat == "idle" {
-				if fmt.Sprintf("%v", yds) != "{idle index 43.50 GB 2.89 GB 40.61 GB 0 B [File.ods downloads/file.deb downloads/setup download down do d o w n] true   }" {
-					t.Error("Incorrect change object:", yds)
-				}
-				return
-			}
-		case <-time.After(time.Second * 10):
-			t.Error("No 'idle' status received within 10 sec interval after sync start")
-			return
-		}
-	}
-}
-
-func TestError(t *testing.T) {
-	_ = exec.Command("yandex-disk", "error").Run()
-	select {
-	case yds := <-YD.Changes:
-		if yds.Stat == "error" {
-			if fmt.Sprintf("%v", yds) != "{error idle 43.50 GB 2.88 GB 40.62 GB 654.48 MB [File.ods downloads/file.deb downloads/setup download down do d o w n] false access error downloads/test1 }" {
+			if fmt.Sprintf("%v", yds) != "{paused none     [File.ods downloads/file.deb downloads/setup download down do_it very_very_long_long_file_with_underscore o w n] true   }" {
 				t.Error("Incorrect change object:", yds)
-			}
-			return
-		}
-		t.Error("Not error status received after error simulation started")
-	case <-time.After(time.Second * 2):
-		t.Error("No reaction within 2 seconds after error simulation started")
-	}
-}
-
-func TestStop(t *testing.T) {
-	var yds YDvals
-	err := YD.Stop()
-	if err != nil {
-		t.Error("daemon stop error:", err)
-	}
-	for {
-		select {
-		case yds = <-YD.Changes:
-			if yds.Stat == "none" {
-				if fmt.Sprintf("%v", yds) != "{none error     [] true   }" {
-					t.Error("Incorrect change object:", yds)
-				}
-				return
 			}
 		case <-time.After(time.Second * 3):
-			t.Error("'none' status not received within 3 sec interval after daemon stop")
-			return
+			t.Error("No events received within 3 sec interval after daemon start")
 		}
-	}
-}
+	})
 
-func TestSecondaryStop(t *testing.T) {
-	err := YD.Stop()
-	if err != nil {
-		t.Error("daemon stop error:", err)
-	}
-	select {
-	case <-YD.Changes:
-		t.Error("Event received within 3 sec interval after secondary stop of daemon")
-	case <-time.After(time.Second * 3):
-	}
-}
-
-func TestClose(t *testing.T) {
-	YD.Close()
-	select {
-	case _, ok := <-YD.Changes:
-		if ok {
-			t.Error("Event received after YDisk.Close()")
-		} else {
-			return // Channel closed - it's Ok.
+	t.Run("OutputStarted", func(t *testing.T) {
+		output := YD.Output()
+		if output == "" {
+			t.Error("Empty response from started daemon")
 		}
-	case <-time.After(time.Second):
-		t.Error("Events channel is not closed after YDisk.Close()")
-	}
+	})
+
+	t.Run("Start2Idle", func(t *testing.T) {
+		for {
+			select {
+			case yds = <-YD.Changes:
+				if yds.Stat == "idle" {
+					if fmt.Sprintf("%v", yds) != "{idle index 43.50 GB 2.89 GB 40.61 GB 0 B [File.ods downloads/file.deb downloads/setup download down do_it very_very_long_long_file_with_underscore o w n] false   }" {
+						t.Error("Incorrect change object:", yds)
+					}
+					return
+				}
+			case <-time.After(time.Second * 30):
+				t.Error("No 'idle' status received within 30 sec interval after daemon start")
+				return
+			}
+		}
+	})
+
+	t.Run("SecondaryStart", func(t *testing.T) {
+		err := YD.Start()
+		if err != nil {
+			t.Error("daemon start error:", err)
+		}
+		select {
+		case <-YD.Changes:
+			t.Error("Event received within 3 sec interval after secondary start of daemon")
+		case <-time.After(time.Second * 3):
+		}
+	})
+
+	t.Run("Sync", func(t *testing.T) {
+		_ = exec.Command("yandex-disk", "sync").Run()
+		select {
+		case yds = <-YD.Changes:
+			if yds.Stat == "index" || yds.Stat == "busy" {
+				if fmt.Sprintf("%v", yds) != "{index idle 43.50 GB 2.89 GB 40.61 GB 0 B [File.ods downloads/file.deb downloads/setup download down do_it very_very_long_long_file_with_underscore o w n] false   }" {
+					t.Error("Incorrect change object:", yds)
+				}
+				return
+			}
+			t.Error("Not index/busy status received after sync started")
+		case <-time.After(time.Second * 2):
+			t.Error("No reaction within 2 seconds after sync started")
+		}
+	})
+
+	t.Run("Busy2Idle", func(t *testing.T) {
+		for {
+			select {
+			case yds = <-YD.Changes:
+				if yds.Stat == "idle" {
+					if fmt.Sprintf("%v", yds) != "{idle index 43.50 GB 2.89 GB 40.61 GB 0 B [File.ods downloads/file.deb downloads/setup download down do_it very_very_long_long_file_with_underscore o w n] true   }" {
+						t.Error("Incorrect change object:", yds)
+					}
+					return
+				}
+			case <-time.After(time.Second * 10):
+				t.Error("No 'idle' status received within 10 sec interval after sync start")
+				return
+			}
+		}
+	})
+
+	t.Run("Error", func(t *testing.T) {
+		_ = exec.Command("yandex-disk", "error").Run()
+		select {
+		case yds = <-YD.Changes:
+			if yds.Stat == "error" {
+				if fmt.Sprintf("%v", yds) != "{error idle 43.50 GB 2.88 GB 40.62 GB 654.48 MB [File.ods downloads/file.deb downloads/setup download down do_it very_very_long_long_file_with_underscore o w n] false access error downloads/test1 }" {
+					t.Error("Incorrect change object:", yds)
+				}
+				return
+			}
+			t.Error("Not error status received after error simulation started")
+		case <-time.After(time.Second * 2):
+			t.Error("No reaction within 2 seconds after error simulation started")
+		}
+	})
+
+	t.Run("Stop", func(t *testing.T) {
+		err = YD.Stop()
+		if err != nil {
+			t.Error("daemon stop error:", err)
+		}
+		for {
+			select {
+			case yds = <-YD.Changes:
+				if yds.Stat == "none" {
+					if fmt.Sprintf("%v", yds) != "{none error     [] true   }" {
+						t.Error("Incorrect change object:", yds)
+					}
+					return
+				}
+			case <-time.After(time.Second * 3):
+				t.Error("'none' status not received within 3 sec interval after daemon stop")
+				return
+			}
+		}
+	})
+
+	t.Run("SecondaryStop", func(t *testing.T) {
+		err := YD.Stop()
+		if err != nil {
+			t.Error("daemon stop error:", err)
+		}
+		select {
+		case <-YD.Changes:
+			t.Error("Event received within 3 sec interval after secondary stop of daemon")
+		case <-time.After(time.Second * 3):
+		}
+	})
+
+	t.Run("Close", func(t *testing.T) {
+		YD.Close()
+		select {
+		case _, ok := <-YD.Changes:
+			if ok {
+				t.Error("Event received after YDisk.Close()")
+			} else {
+				return // Channel closed - it's Ok.
+			}
+		case <-time.After(time.Second):
+			t.Error("Events channel is not closed after YDisk.Close()")
+		}
+	})
 }
