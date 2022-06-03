@@ -1,5 +1,5 @@
 # ydisk
-[![CircleCI](https://circleci.com/gh/slytomcat/ydisk.svg?style=svg)](https://circleci.com/gh/slytomcat/ydisk)
+[![GithubGo](https://github.com/slytomcat/ydisk/actions/workflows/go.yml/badge.svg?branch=master)](https://github.com/slytomcat/ydisk/actions/workflows/go.yml)
 
 ydisk is the go wrapper for yandex-disk CLI daemon.
 
