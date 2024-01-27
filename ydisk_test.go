@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/slytomcat/llog"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -62,122 +63,98 @@ func TestMain(m *testing.M) {
 }
 
 func TestNotInstalled(t *testing.T) {
-	// defer restore original PATH value
-	defer func(p string) {
-		os.Setenv("PATH", p)
-	}(os.Getenv("PATH"))
-	// make PATH empty for test time
-	os.Setenv("PATH", "")
+	t.Setenv("PATH", "")
 	// test not_installed case
-	_, err := NewYDisk(Cfg)
-	if err == nil {
-		t.Error("Initialized with not installed daemon")
-	}
+	yd, err := NewYDisk(Cfg)
+	require.Error(t, err)
+	require.Nil(t, yd)
 }
 
 func TestWrongConf(t *testing.T) {
 	// test initialization with wrong/not-existing config
-	_, err := NewYDisk(Cfg + "_bad")
-	if err == nil {
-		t.Error("Initialized with not existing daemon config file")
-	}
+	yd, err := NewYDisk(Cfg + "_bad")
+	require.Error(t, err)
+	require.Nil(t, yd)
 }
 
 func TestEmptyConf(t *testing.T) {
 	// test initialization with empty config
 	file, err := os.OpenFile(Cfg, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		llog.Error(err)
-	} else {
-		file.Write([]byte("Dir=\"no_dir\"\n\nproxy=\"no\"\n"))
-		file.Close()
-		defer os.Remove(Cfg)
-
-		_, err = NewYDisk(Cfg)
-		if err == nil {
-			t.Error("Initialized with empty config file")
-		}
-
-	}
+	require.NoError(t, err)
+	defer file.Close()
+	_, err = file.Write([]byte("Dir=\"no_dir\"\n\nproxy=\"no\"\n"))
+	require.NoError(t, err)
+	file.Close()
+	defer os.Remove(Cfg)
+	_, err = NewYDisk(Cfg)
+	require.Error(t, err)
 }
 
 func TestFull(t *testing.T) {
 	// prepare for similation
 	err := exec.Command(SymExe, "setup").Run()
-	if err != nil {
-		t.Fatalf("simulation prepare error: %v", err)
-	}
+	require.NoError(t, err)
 	var YD *YDisk
 	var yds YDvals
-	t.Run("start", func(t *testing.T) {
+	t.Run("Create", func(t *testing.T) {
 		YD, err = NewYDisk(Cfg)
-		if err != nil {
-			t.Error("creation error of normally configured daemon")
-		}
+		require.NoError(t, err)
 	})
 
 	t.Run("NotStartedOupput", func(t *testing.T) {
 		output := YD.Output()
-		if output != "" {
-			t.Error("Non-empty response from inactive daemon")
-		}
+		require.Empty(t, output)
 	})
 
 	t.Run("InitialEvent", func(t *testing.T) {
-		select {
-		case yds = <-YD.Changes:
-			if fmt.Sprintf("%v", yds) != "{none unknown     [] true   }" {
-				t.Error("Incorrect change object:", yds)
+		require.Eventually(t, func() bool {
+			select {
+			case yds = <-YD.Changes:
+				require.Equal(t, "{none unknown     [] true   }", fmt.Sprintf("%v", yds))
+				return true
+			default:
+				return false
 			}
-		case <-time.After(time.Second):
-			t.Error("No events received within 1 sec interval after YDisk creation")
-		}
+		}, time.Second, 100*time.Millisecond)
 	})
 
 	t.Run("Start", func(t *testing.T) {
 		err = YD.Start()
-		if err != nil {
-			t.Error("daemon start error:", err)
-		}
-		select {
-		case yds = <-YD.Changes:
-			if fmt.Sprintf("%v", yds) != "{paused none     [File.ods downloads/file.deb downloads/setup download down do_it very_very_long_long_file_with_underscore o w n] true   }" {
-				t.Error("Incorrect change object:", yds)
+		require.NoError(t, err)
+		require.Eventually(t, func() bool {
+			select {
+			case yds = <-YD.Changes:
+				require.Equal(t, "{paused none     [File.ods downloads/file.deb downloads/setup download down do_it very_very_long_long_file_with_underscore o w n] true   }", fmt.Sprintf("%v", yds))
+				return true
+			default:
+				return false
 			}
-		case <-time.After(time.Second * 3):
-			t.Error("No events received within 3 sec interval after daemon start")
-		}
+		}, time.Second*3, 300*time.Microsecond)
 	})
 
 	t.Run("OutputStarted", func(t *testing.T) {
 		output := YD.Output()
-		if output == "" {
-			t.Error("Empty response from started daemon")
-		}
+		require.NotEmpty(t, output)
 	})
 
 	t.Run("Start2Idle", func(t *testing.T) {
-		for {
+		require.Eventually(t, func() bool {
 			select {
 			case yds = <-YD.Changes:
-				if yds.Stat == "idle" {
-					if fmt.Sprintf("%v", yds) != "{idle index 43.50 GB 2.89 GB 40.61 GB 0 B [File.ods downloads/file.deb downloads/setup download down do_it very_very_long_long_file_with_underscore o w n] false   }" {
-						t.Error("Incorrect change object:", yds)
-					}
-					return
+				if yds.Stat != "idle" {
+					return false
 				}
-			case <-time.After(time.Second * 30):
-				t.Error("No 'idle' status received within 30 sec interval after daemon start")
-				return
+				require.Equal(t, "{idle index 43.50 GB 2.89 GB 40.61 GB 0 B [File.ods downloads/file.deb downloads/setup download down do_it very_very_long_long_file_with_underscore o w n] false   }", fmt.Sprintf("%v", yds))
+				return true
+			default:
+				return false
 			}
-		}
+		}, 30*time.Second, time.Second)
 	})
 
 	t.Run("SecondaryStart", func(t *testing.T) {
 		err := YD.Start()
-		if err != nil {
-			t.Error("daemon start error:", err)
-		}
+		require.NoError(t, err)
 		select {
 		case <-YD.Changes:
 			t.Error("Event received within 3 sec interval after secondary start of daemon")
@@ -186,98 +163,90 @@ func TestFull(t *testing.T) {
 	})
 
 	t.Run("Sync", func(t *testing.T) {
-		_ = exec.Command("yandex-disk", "sync").Run()
+		err = exec.Command("yandex-disk", "sync").Run()
+		require.NoError(t, err)
 		select {
 		case yds = <-YD.Changes:
-			if yds.Stat == "index" || yds.Stat == "busy" {
-				if fmt.Sprintf("%v", yds) != "{index idle 43.50 GB 2.89 GB 40.61 GB 0 B [File.ods downloads/file.deb downloads/setup download down do_it very_very_long_long_file_with_underscore o w n] false   }" {
-					t.Error("Incorrect change object:", yds)
-				}
-				return
-			}
-			t.Error("Not index/busy status received after sync started")
-		case <-time.After(time.Second * 2):
-			t.Error("No reaction within 2 seconds after sync started")
+			require.Equal(t,
+				"{index idle 43.50 GB 2.89 GB 40.61 GB 0 B [File.ods downloads/file.deb downloads/setup download down do_it very_very_long_long_file_with_underscore o w n] false   }",
+				fmt.Sprintf("%v", yds))
+		case <-time.After(2 * time.Second):
+			t.Fatal("no event for 2 seconds after sync command")
 		}
 	})
 
 	t.Run("Busy2Idle", func(t *testing.T) {
-		for {
+		require.Eventually(t, func() bool {
 			select {
 			case yds = <-YD.Changes:
-				if yds.Stat == "idle" {
-					if fmt.Sprintf("%v", yds) != "{idle index 43.50 GB 2.89 GB 40.61 GB 0 B [File.ods downloads/file.deb downloads/setup download down do_it very_very_long_long_file_with_underscore o w n] true   }" {
-						t.Error("Incorrect change object:", yds)
-					}
-					return
+				if yds.Stat != "idle" {
+					return false
 				}
-			case <-time.After(time.Second * 10):
-				t.Error("No 'idle' status received within 10 sec interval after sync start")
-				return
+				require.Equal(t,
+					"{idle index 43.50 GB 2.89 GB 40.61 GB 0 B [File.ods downloads/file.deb downloads/setup download down do_it very_very_long_long_file_with_underscore o w n] true   }",
+					fmt.Sprintf("%v", yds))
+				return true
 			}
-		}
+		}, 10*time.Second, time.Second)
 	})
 
 	t.Run("Error", func(t *testing.T) {
-		_ = exec.Command("yandex-disk", "error").Run()
-		select {
-		case yds = <-YD.Changes:
-			if yds.Stat == "error" {
-				if fmt.Sprintf("%v", yds) != "{error idle 43.50 GB 2.88 GB 40.62 GB 654.48 MB [File.ods downloads/file.deb downloads/setup download down do_it very_very_long_long_file_with_underscore o w n] false access error downloads/test1 }" {
-					t.Error("Incorrect change object:", yds)
+		require.NoError(t, exec.Command("yandex-disk", "error").Run())
+		require.Eventually(t, func() bool {
+			select {
+			case yds = <-YD.Changes:
+				if yds.Stat != "error" {
+					return false
 				}
-				return
+				require.Equal(t,
+					"{error idle 43.50 GB 2.88 GB 40.62 GB 654.48 MB [File.ods downloads/file.deb downloads/setup download down do_it very_very_long_long_file_with_underscore o w n] false access error downloads/test1 }",
+					fmt.Sprintf("%v", yds))
+				return true
+			default:
+				return false
 			}
-			t.Error("Not error status received after error simulation started")
-		case <-time.After(time.Second * 2):
-			t.Error("No reaction within 2 seconds after error simulation started")
-		}
+
+		}, 2*time.Second, 200*time.Millisecond)
 	})
 
 	t.Run("Stop", func(t *testing.T) {
-		err = YD.Stop()
-		if err != nil {
-			t.Error("daemon stop error:", err)
-		}
-		for {
+		require.NoError(t, YD.Stop())
+		require.Eventually(t, func() bool {
 			select {
 			case yds = <-YD.Changes:
-				if yds.Stat == "none" {
-					if fmt.Sprintf("%v", yds) != "{none error     [] true   }" {
-						t.Error("Incorrect change object:", yds)
-					}
-					return
+				if yds.Stat != "none" {
+					return false
 				}
-			case <-time.After(time.Second * 3):
-				t.Error("'none' status not received within 3 sec interval after daemon stop")
-				return
+				require.Equal(t, "{none error     [] true   }", fmt.Sprintf("%v", yds))
+				return true
+			default:
+				return false
 			}
-		}
+		}, 3*time.Second, 300*time.Millisecond)
 	})
 
 	t.Run("SecondaryStop", func(t *testing.T) {
-		err := YD.Stop()
-		if err != nil {
-			t.Error("daemon stop error:", err)
-		}
-		select {
-		case <-YD.Changes:
-			t.Error("Event received within 3 sec interval after secondary stop of daemon")
-		case <-time.After(time.Second * 3):
-		}
+		require.NoError(t, YD.Stop())
+		require.Never(t, func() bool {
+			select {
+			case <-YD.Changes:
+				return true
+			default:
+				return false
+			}
+		}, 3*time.Second, 300*time.Millisecond)
 	})
 
 	t.Run("Close", func(t *testing.T) {
 		YD.Close()
-		select {
-		case _, ok := <-YD.Changes:
-			if ok {
-				t.Error("Event received after YDisk.Close()")
-			} else {
-				return // Channel closed - it's Ok.
+		require.Eventually(t, func() bool {
+			select {
+			case _, ok := <-YD.Changes:
+				require.False(t, ok)
+				return true
+			default:
+				return false
 			}
-		case <-time.After(time.Second):
-			t.Error("Events channel is not closed after YDisk.Close()")
-		}
+		}, time.Second, 100*time.Millisecond)
 	})
 }
