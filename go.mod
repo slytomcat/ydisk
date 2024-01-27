@@ -4,7 +4,7 @@ go 1.21.6
 
 require (
 	github.com/fsnotify/fsnotify v1.7.0
-	github.com/slytomcat/llog v0.0.0-20190104202300-c8978e4fae9a
+	github.com/slytomcat/llog v0.0.0-20240127233739-55a4e3ac9644
 	github.com/stretchr/testify v1.8.4
 )
 
